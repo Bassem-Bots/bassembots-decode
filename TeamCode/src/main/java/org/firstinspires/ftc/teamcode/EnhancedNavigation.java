@@ -44,6 +44,7 @@ public class EnhancedNavigation {
     private static final double MIN_TRANSLATION_POWER = 0.0;
     private static final double MIN_ROTATION_POWER = 0.0;
 
+
     // Error tracking
     private double lastXError = 0;
     private double lastYError = 0;
