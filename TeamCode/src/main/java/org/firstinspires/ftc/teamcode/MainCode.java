@@ -9,8 +9,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import java.util.Locale;
 
-@TeleOp(name="Main Code", group="Use this")
-public class Code_Z extends LinearOpMode {
+@TeleOp(name="Main Code", group="Usethis")
+public class MainCode extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     GoBildaPinpointDriver odo;
     RobotControl robot = new RobotControl(this);
@@ -63,7 +63,7 @@ public class Code_Z extends LinearOpMode {
                 fieldCentric = (robot.fieldCentric) ? false : true;
             }
             if (!gamepad1.left_stick_button) {
-                robot.fieldCentric = driveSetting
+                robot.fieldCentric = fieldCentric;
             }
 
             if (gamepad1.a) {
@@ -94,8 +94,8 @@ public class Code_Z extends LinearOpMode {
             }
             lastLeftBumperState = currentLeftBumper;
 
-            robot.shooter.setPower(shooterPower)
-            robot.intake.setPower(intakePower)
+            robot.shooter.setPower(shooterPower);
+            robot.intake.setPower(intakePower);
 
             // Update odometry and telemetry
             odo.update();
@@ -112,12 +112,7 @@ public class Code_Z extends LinearOpMode {
             //telemetry.addData("Arm motor target", robot.armTarget);
             telemetry.addData("near basker", odo.getPosition().getHeading(AngleUnit.DEGREES));
             telemetry.addData("editing", odo.getHeading());
-            if (isNavigating) {
-                telemetry.addData("Navigation", "Moving to Basket");
-            }
-            
-            // AprilTag telemetry
-            displayAprilTagTelemetry();
+
             
             telemetry.update();
         }

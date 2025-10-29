@@ -32,8 +32,6 @@ public class Code_Z extends LinearOpMode {
     private boolean lastRightBumperPressed = false;
 
     // Basket coordinates (adjust these based on your field setup)
-    private final double BASKET_X = robot.BASKET_X_TELE;  // Using constant from RobotControl
-    private final double BASKET_Y = robot.BASKET_Y_TELE;  // Using constant from RobotControl
     private static final double BASKET_HEADING = -40.0;
     private double specPhase = 0;
 
@@ -42,8 +40,6 @@ public class Code_Z extends LinearOpMode {
     private double navH = 0;// Degrees
     private boolean isEditing = false;
     private boolean nearBasket = false;
-    double basketXError = BASKET_X;
-    double basketYError = BASKET_Y;
     double basketHError = BASKET_HEADING;
 
     @Override
@@ -69,7 +65,7 @@ public class Code_Z extends LinearOpMode {
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         //odo.resetPosAndIMU();
-
+        
         // Initialize navigation system
         navigation = new EnhancedNavigation(robot, odo);
 
@@ -297,7 +293,7 @@ public class Code_Z extends LinearOpMode {
     /**
      * Simple sleep method for debouncing
      */
-    private void sleepMs(long milliseconds) {
+    private void sleep(long milliseconds) {
         try {
             Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
