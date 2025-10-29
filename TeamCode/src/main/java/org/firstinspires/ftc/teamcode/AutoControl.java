@@ -104,7 +104,6 @@ public class AutoControl {
                 break;
             }
             updateTelemetry();
-            robot.armControl(0, c);
         }
         robot.resetDrive();
     }
@@ -118,7 +117,6 @@ public class AutoControl {
                     break;
                 }
             }
-            robot.armControl(0, 1);
         }
     }
 

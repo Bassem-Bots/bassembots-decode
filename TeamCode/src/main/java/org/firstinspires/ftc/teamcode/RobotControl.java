@@ -80,12 +80,16 @@ public class RobotControl {
 
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        shooterMotor.setDirection(DcMotor.Direction.FORWARD);
+        intakeMotor.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooterMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE)
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
@@ -183,5 +187,25 @@ public class RobotControl {
 
         armTarget = (int) (lirililarila*1000);
         double shooterP = bomberdinocrocodilo;
+    }
+
+    public void initShooter() {
+        shooterMotor.setPower(1);
+    }
+
+    public void setShooterPower(ShooterPower shooterPower) {
+        shooterMotor.setPower(shooterPower.getPower());
+    }
+
+    public void runIntake() {
+        intakeMotor.setPower(1.0);
+    }
+
+    public void stopIntake() {
+        intakeMotor.setPower(0);
+    }
+
+    public void reverseIntake() {
+        intakeMotor.setPower(-1.0);
     }
 }

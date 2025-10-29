@@ -9,7 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import java.util.Locale;
 
-@TeleOp(name="Final code", group="Linear OpMode")
+@TeleOp(name="Main Test", group="Linear OpMode")
 public class Code_Z extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     GoBildaPinpointDriver odo;
@@ -23,6 +23,13 @@ public class Code_Z extends LinearOpMode {
     private boolean bing = false;
     private int targetTagId = 1;
     private boolean aprilTagAssist = false;
+=
+    // Shooter control variables
+    private ShooterPower currentShooterPower = ShooterPower.OFF;
+    private boolean shooterEnabled = false;
+    private boolean lastXPressed = false;
+    private boolean lastLeftBumperPressed = false;
+    private boolean lastRightBumperPressed = false;
 
     // Basket coordinates (adjust these based on your field setup)
     private final double BASKET_X = robot.BASKET_X_TELE;  // Using constant from RobotControl
@@ -99,6 +106,19 @@ public class Code_Z extends LinearOpMode {
             if (!gamepad1.right_stick_button) {
                 mod = slow;
             }
+
+            // Intake control - Right trigger
+            if (gamepad1.right_trigger > 0.1) {
+                robot.runIntake();
+            } else {
+                robot.stopIntake();
+            }
+
+            // Shooter speed control - Left and Right bumpers
+            handleShooterSpeedControl();
+
+            // Shooter toggle - X button
+            handleShooterToggle();
             
             // AprilTag controls
             handleAprilTagControls();
@@ -115,6 +135,13 @@ public class Code_Z extends LinearOpMode {
             // Telemetry updates
             telemetry.addData("odo Position", data);
             telemetry.addData("Status", "Run Time: " + runtime.toString());
+            
+            // Shooter and intake telemetry
+            telemetry.addLine("=== Robot Controls ===");
+            telemetry.addData("Shooter", shooterEnabled ? "ON" : "OFF");
+            telemetry.addData("Shooter Power", currentShooterPower.name() + " (" + currentShooterPower.getPower() + ")");
+            telemetry.addData("Intake", gamepad1.right_trigger > 0.1 ? "RUNNING" : "STOPPED");
+            
             //telemetry.addData("Arm motor position", robot.armMotor.getCurrentPosition());
             //telemetry.addData("Arm motor target", robot.armTarget);
             telemetry.addData("near basker", odo.getPosition().getHeading(AngleUnit.DEGREES));
@@ -137,6 +164,78 @@ public class Code_Z extends LinearOpMode {
     }
     
     /**
+     * Handle shooter speed control with bumpers
+     */
+    private void handleShooterSpeedControl() {
+        // Increase shooter speed with right bumper
+        if (gamepad1.right_bumper && !lastRightBumperPressed) {
+            switch (currentShooterPower) {
+                case OFF:
+                    currentShooterPower = ShooterPower.LOW;
+                    break;
+                case LOW:
+                    currentShooterPower = ShooterPower.MEDIUM;
+                    break;
+                case MEDIUM:
+                    currentShooterPower = ShooterPower.SEMI;
+                    break;
+                case SEMI:
+                    currentShooterPower = ShooterPower.HIGH;
+                    break;
+                case HIGH:
+                    // Already at max
+                    break;
+            }
+            if (shooterEnabled) {
+                robot.setShooterPower(currentShooterPower);
+            }
+        }
+
+        // Decrease shooter speed with left bumper
+        if (gamepad1.left_bumper && !lastLeftBumperPressed) {
+            switch (currentShooterPower) {
+                case HIGH:
+                    currentShooterPower = ShooterPower.SEMI;
+                    break;
+                case SEMI:
+                    currentShooterPower = ShooterPower.MEDIUM;
+                    break;
+                case MEDIUM:
+                    currentShooterPower = ShooterPower.LOW;
+                    break;
+                case LOW:
+                    currentShooterPower = ShooterPower.OFF;
+                    break;
+                case OFF:
+                    // Already at min
+                    break;
+            }
+            if (shooterEnabled) {
+                robot.setShooterPower(currentShooterPower);
+            }
+        }
+
+        // Update button states for next loop
+        lastLeftBumperPressed = gamepad1.left_bumper;
+        lastRightBumperPressed = gamepad1.right_bumper;
+    }
+
+    /**
+     * Handle shooter on/off toggle with X button
+     */
+    private void handleShooterToggle() {
+        if (gamepad1.x && !lastXPressed) {
+            shooterEnabled = !shooterEnabled;
+            if (shooterEnabled) {
+                robot.setShooterPower(currentShooterPower);
+            } else {
+                robot.setShooterPower(ShooterPower.OFF);
+            }
+        }
+        lastXPressed = gamepad1.x;
+    }
+
+    /**
      * Handle AprilTag-related gamepad controls
      */
     private void handleAprilTagControls() {
@@ -158,14 +257,14 @@ public class Code_Z extends LinearOpMode {
         // Control camera streaming
         if (gamepad1.y) {
             aprilTagHelper.resumeStreaming();
-        } else if (gamepad1.x) {
+        } else if (gamepad1.b) {
             aprilTagHelper.stopStreaming();
         }
 
-        // Adjust detection quality vs speed
-        if (gamepad1.right_bumper) {
+        // Adjust detection quality vs speed (using gamepad2 to avoid conflicts)
+        if (gamepad2.right_bumper) {
             aprilTagHelper.setDecimation(1); // High quality, slower
-        } else if (gamepad1.left_bumper) {
+        } else if (gamepad2.left_bumper) {
             aprilTagHelper.setDecimation(3); // Lower quality, faster
         }
     }
@@ -190,14 +289,15 @@ public class Code_Z extends LinearOpMode {
             }
 
             // Controls help
-            telemetry.addLine("Controls: A=Toggle Assist, D-pad=Change Tag");
+            telemetry.addLine("AprilTag: A=Toggle Assist, D-pad=Change Tag");
+            telemetry.addLine("Robot: X=Shooter On/Off, Bumpers=Speed, RT=Intake");
         }
     }
     
     /**
      * Simple sleep method for debouncing
      */
-    private void sleep(long milliseconds) {
+    private void sleepMs(long milliseconds) {
         try {
             Thread.sleep(milliseconds);
         } catch (InterruptedException e) {

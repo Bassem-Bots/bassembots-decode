@@ -17,7 +17,7 @@ import java.util.List;
  * It can be used in both TeleOp and Autonomous modes.
  */
 @TeleOp(name = "AprilTag Detection", group = "Vision")
-public class AprilTagDetection extends LinearOpMode {
+public class AprilTagDetectionOpMode extends LinearOpMode {
 
     private static final boolean USE_WEBCAM = true;  // Set to true if using a webcam
     private static final String WEBCAM_NAME = "Webcam 1";  // Change to your webcam's name

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.annotation.SuppressLint;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,6 +18,7 @@ public class MotorTest extends LinearOpMode {
     private boolean lastRightBumperState = false;
     private boolean lastLeftBumperState = false;
 
+    @SuppressLint("DefaultLocale")
     @Override
     public void runOpMode() {
         // Initialize the motor
@@ -59,6 +62,7 @@ public class MotorTest extends LinearOpMode {
                 motorSpeed = Math.max(-1.0, motorSpeed - 0.1);
                 motorRunning = true;
             }
+
             lastLeftBumperState = currentLeftBumper;
 
             // Apply motor power
