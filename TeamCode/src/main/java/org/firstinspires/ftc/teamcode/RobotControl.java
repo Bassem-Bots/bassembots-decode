@@ -16,24 +16,28 @@ public class RobotControl {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
-    public DcMotor armMotor = null;
+    public DcMotor shooter = null;
+    public DcMotor intake = null;
+    // public DcMotor armMotor = null;
+    public GoBildaPinpointDriver odo = null;
+    public boolean fieldCentric = false;
 
-    public static final double ARM_HANG_POS = -1500;
-    public static final int ARM_HIGH = -2800;
-    public static final int MAX_EXTENSION = -2150;
-    public static final double TICKS_PER_DEGREE = (double) 2500 / 360;
-    public static final double TICKS_PER_MM = 1;
-    public static final double BASKET_X_AUTO = 0;
-    public static final double BASKET_Y_AUTO = 0;
-    public static final double BASKET_X_TELE = 920;
-    public static final double BASKET_Y_TELE = -260;
+    // public static final double ARM_HANG_POS = -1500;
+    // public static final int ARM_HIGH = -2800;
+    // public static final int MAX_EXTENSION = -2150;
+    // public static final double TICKS_PER_DEGREE = (double) 2500 / 360;
+    // public static final double TICKS_PER_MM = 1;
+    // public static final double BASKET_X_AUTO = 0;
+    // public static final double BASKET_Y_AUTO = 0;
+    // public static final double BASKET_X_TELE = 920;
+    // public static final double BASKET_Y_TELE = -260;
 
-    public int controlOn = 1;
-    public int armTarget;
-    private ElapsedTime armTimer;
+    // public int controlOn = 1;
+    // public int armTarget;
+    // private ElapsedTime armTimer;
     private EnhancedNavigation navigation;
-    public double da;
-    public boolean isTeleop = false;
+    // public double da;
+    // public boolean isTeleop = false;
 
     // Define a constructor that allows the OpMode to pass a reference to itself.
     public RobotControl(LinearOpMode opmode) {
@@ -47,12 +51,11 @@ public class RobotControl {
      * All of the hardware devices are accessed via the hardware map, and initialized.
      */
     public void init() {
-        armTimer = new ElapsedTime();
-        /*GoBildaPinpointDriver odo = myOpMode.hardwareMap.get(
+        odo = myOpMode.hardwareMap.get(
                 GoBildaPinpointDriver.class,
                 "odo"
         );
-        navigation = new EnhancedNavigation(this, odo);*/
+        navigation = new EnhancedNavigation(this, odo);
         // Define and Initialize Motors (note: need to use reference to actual OpMode).
         leftFrontDrive = myOpMode.hardwareMap.get(
                 DcMotor.class,
@@ -67,6 +70,8 @@ public class RobotControl {
                 DcMotor.class,
                 "right_back_drive"
         );
+        intake = myOpMode.hardwareMap.get(DcMotor.class, "intake")
+        shooter = myOpMode.hardwareMap.get(DcMotor.class, "shooter")
         //armMotor = myOpMode.hardwareMap.get(DcMotor.class, "arm_motor");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
@@ -81,6 +86,7 @@ public class RobotControl {
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE)
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -100,7 +106,7 @@ public class RobotControl {
             double yaw,
             double mod
     ) {
-        double theta = Math.atan2(axial, lateral);
+        double theta = (fieldCentric) ? odo.getPosition().getHeading() : Math.atan2(axial, lateral);
         double power = Math.hypot(axial, lateral);
 
         double sin = Math.sin(theta - Math.PI / 4);
@@ -135,27 +141,27 @@ public class RobotControl {
         rightBackDrive.setPower(rightBackPower);
     }
 
-    public void armControl(double power, double cPower) {
-        da = armTimer.seconds() < 0.5 ? armTimer.seconds() : 0;
-        armTimer.reset();
-        armTarget += (int) (2100.0 * power * da);
-        double armP = navigation.clamp(
-                navigation.calculateArmPIDF(
-                        armMotor.getCurrentPosition(),
-                        armTarget,
-                        da
-                ),
-                -cPower,
-                cPower
-        );
-        if (isTeleop) {
-            double xi = armTarget > -1200 && armTarget < -500
-                    ? ((armTarget + 300) / 3000.) + 0.6
-                    : 1;
-            myOpMode.telemetry.addData("xi", xi);
-        }
-        armMotor.setPower(armP);
-    }
+    // public void armControl(double power, double cPower) {
+    //     da = armTimer.seconds() < 0.5 ? armTimer.seconds() : 0;
+    //     armTimer.reset();
+    //     armTarget += (int) (2100.0 * power * da);
+    //     double armP = navigation.clamp(
+    //             navigation.calculateArmPIDF(
+    //                     armMotor.getCurrentPosition(),
+    //                     armTarget,
+    //                     da
+    //             ),
+    //             -cPower,
+    //             cPower
+    //     );
+    //     if (isTeleop) {
+    //         double xi = armTarget > -1200 && armTarget < -500
+    //                 ? ((armTarget + 300) / 3000.) + 0.6
+    //                 : 1;
+    //         myOpMode.telemetry.addData("xi", xi);
+    //     }
+    //     armMotor.setPower(armP);
+    // }
 
     public void resetDrive() {
         leftFrontDrive.setPower(0);
