@@ -40,7 +40,6 @@ public class AutoControl {
     public void initialize(){
         robot = new RobotControl(myOpMode);
         robot.init();
-        robot.resetEncoders();
         cPower = power;
 
         odo = myOpMode.hardwareMap.get(GoBildaPinpointDriver.class, "odo");
@@ -62,10 +61,10 @@ public class AutoControl {
         myOpMode.telemetry.update();
     }
 
-    public void setup(){
-        robot.armTarget = -1000;
-        robot.controllerDrive(0, 1, 0, 1);
-    }
+//    public void setup(){
+//        robot.armTarget = -1000;
+//        robot.controllerDrive(0, 1, 0, 1);
+//    }
 
 
     public void updateTelemetry(){
@@ -76,8 +75,8 @@ public class AutoControl {
                 pos.getY(DistanceUnit.MM),
                 pos.getHeading(AngleUnit.DEGREES));
         myOpMode.telemetry.addData("Current", data);
-        myOpMode.telemetry.addData("arm pos", robot.armMotor.getCurrentPosition());
-        myOpMode.telemetry.addData("target", robot.armTarget);
+//        myOpMode.telemetry.addData("arm pos", robot.armMotor.getCurrentPosition());
+//        myOpMode.telemetry.addData("target", robot.armTarget);
         
         // Add AprilTag telemetry if available
         if (aprilTagHelper != null && aprilTagHelper.isInitialized()) {
@@ -104,7 +103,7 @@ public class AutoControl {
                 break;
             }
             updateTelemetry();
-            robot.armControl(0, c);
+//            robot.armControl(0, c);
         }
         robot.resetDrive();
     }
@@ -118,7 +117,7 @@ public class AutoControl {
                     break;
                 }
             }
-            robot.armControl(0, 1);
+//            robot.armControl(0, 1);
         }
     }
 

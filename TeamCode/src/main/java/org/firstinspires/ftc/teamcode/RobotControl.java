@@ -6,6 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 public class RobotControl {
 
     /* Declare OpMode members. */
@@ -70,8 +72,8 @@ public class RobotControl {
                 DcMotor.class,
                 "right_back_drive"
         );
-        intake = myOpMode.hardwareMap.get(DcMotor.class, "intake")
-        shooter = myOpMode.hardwareMap.get(DcMotor.class, "shooter")
+        intake = myOpMode.hardwareMap.get(DcMotor.class, "intake");
+        shooter = myOpMode.hardwareMap.get(DcMotor.class, "shooter");
         //armMotor = myOpMode.hardwareMap.get(DcMotor.class, "arm_motor");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
@@ -79,14 +81,14 @@ public class RobotControl {
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
 
         leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE)
+        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -95,10 +97,10 @@ public class RobotControl {
         //armMotor.setTargetPosition(armTarget);
     }
 
-    public void resetEncoders() {
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
+//    public void resetEncoders() {
+//        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//    }
 
     public void controllerDrive(
             double axial,
@@ -106,7 +108,7 @@ public class RobotControl {
             double yaw,
             double mod
     ) {
-        double theta = (fieldCentric) ? odo.getPosition().getHeading() : Math.atan2(axial, lateral);
+        double theta = (fieldCentric) ? odo.getPosition().getHeading(AngleUnit.RADIANS) : Math.atan2(axial, lateral);
         double power = Math.hypot(axial, lateral);
 
         double sin = Math.sin(theta - Math.PI / 4);
@@ -181,7 +183,7 @@ public class RobotControl {
         double lirililarila = Math.atan((capotchinoassassino * brrbrrpatapim) / (distanceX * gravity)); // N
         double bomberdinocrocodilo = Math.sqrt(Math.pow(distanceX * gravity/brrbrrpatapim, 2) + (2*gravity*maxHeight));
 
-        armTarget = (int) (lirililarila*1000);
+//        armTarget = (int) (lirililarila*1000);
         double shooterP = bomberdinocrocodilo;
     }
 }
