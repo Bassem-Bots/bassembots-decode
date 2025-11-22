@@ -23,6 +23,7 @@ public class MainCode extends LinearOpMode {
     private double intakePower = 0;
     private boolean lastRightBumperState = false;
     private boolean lastLeftBumperState = false;
+    private boolean lastDpadUpState = false;
 
     @Override
     public void runOpMode() {
@@ -31,7 +32,7 @@ public class MainCode extends LinearOpMode {
         
         // Initialize odometry
         odo = robot.odo;
-        odo.setOffsets(6.25, -168.0);
+        odo.setOffsets(-13.5, -169.5);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         //odo.resetPosAndIMU();
@@ -93,6 +94,12 @@ public class MainCode extends LinearOpMode {
                 shooterPower = Math.max(-1.0, shooterPower - 0.1);
             }
             lastLeftBumperState = currentLeftBumper;
+
+            boolean currentDpadUp = gamepad1.dpad_up;
+            if (currentDpadUp && !lastDpadUpState) {
+                odo.resetPosAndIMU();
+            }
+            lastDpadUpState = currentDpadUp;
 
             robot.shooter.setPower(shooterPower);
             robot.intake.setPower(intakePower);
