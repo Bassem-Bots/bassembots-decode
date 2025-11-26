@@ -23,11 +23,13 @@ public class MainCode extends LinearOpMode {
     private double mod = 1;
     private double slow = 1;
     private boolean fieldCentric = true;
+    private boolean goalFacingMode = false;
     private double shooterPower = 0;
     private double intakePower = 0;
     private boolean lastRightBumperState = false;
     private boolean lastLeftBumperState = false;
     private boolean lastDpadUpState = false;
+    private boolean lastDpadLeftState = false;
 
     @Override
     public void runOpMode() {
@@ -54,7 +56,12 @@ public class MainCode extends LinearOpMode {
             double lateral = gamepad1.left_stick_x;
             double yaw = gamepad1.right_stick_x;
 
-            robot.controllerDrive(axial, lateral, yaw, mod);
+            // Use goal-facing mode if enabled, otherwise use manual yaw control
+            if (goalFacingMode) {
+                robot.driveWithGoalFacing(axial, lateral, mod, 1.0);
+            } else {
+                robot.controllerDrive(axial, lateral, yaw, mod);
+            }
 
             // Speed control
             if (gamepad1.right_stick_button) {
@@ -109,6 +116,13 @@ public class MainCode extends LinearOpMode {
             }
             lastDpadUpState = currentDpadUp;
 
+            // Toggle goal-facing mode with dpad_left
+            boolean currentDpadLeft = gamepad1.dpad_left;
+            if (currentDpadLeft && !lastDpadLeftState) {
+                goalFacingMode = !goalFacingMode;
+            }
+            lastDpadLeftState = currentDpadLeft;
+
             robot.shooter.setPower(shooterPower);
             robot.intake.setPower(intakePower);
 
@@ -125,9 +139,10 @@ public class MainCode extends LinearOpMode {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             //telemetry.addData("Arm motor position", robot.armMotor.getCurrentPosition());
             //telemetry.addData("Arm motor target", robot.armTarget);
-            telemetry.addData("near basker", odo.getPosition().getHeading(AngleUnit.DEGREES));
-            telemetry.addData("editing", odo.getHeading());
-            telemetry.addData("Field Centric ", fieldCentric);
+            telemetry.addData("Robot Heading", "%.1f°", odo.getPosition().getHeading(AngleUnit.DEGREES));
+            telemetry.addData("Goal Heading", "%.1f°", Math.toDegrees(robot.calculateHeadingToGoal()));
+            telemetry.addData("Field Centric", fieldCentric);
+            telemetry.addData("Goal Facing Mode", goalFacingMode ? "ON (dpad_left to toggle)" : "OFF (dpad_left to toggle)");
 
             telemetry.update();
         }

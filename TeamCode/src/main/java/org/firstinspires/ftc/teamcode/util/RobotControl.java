@@ -28,7 +28,8 @@ public class RobotControl {
     public boolean fieldCentric = false;
 
     // public static final double ARM_HANG_POS = -1500;
-    // public static final int ARM_HIGH = -2800;
+    public static final double GOAL_X = 2633.769; // mm
+    public static final double GOAL_Y = 1004.791; // mm
     // public static final int MAX_EXTENSION = -2150;
     // public static final double TICKS_PER_DEGREE = (double) 2500 / 360;
     // public static final double TICKS_PER_MM = 1;
@@ -174,6 +175,55 @@ public class RobotControl {
         rightFrontDrive.setPower(0);
         leftBackDrive.setPower(0);
         rightBackDrive.setPower(0);
+    }
+
+    /**
+     * Calculate the heading angle from robot position to goal position
+     * @return angle in radians from robot to goal
+     */
+    public double calculateHeadingToGoal() {
+        odo.update();
+        double robotX = odo.getPosition().getX(org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.MM);
+        double robotY = odo.getPosition().getY(org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.MM);
+        
+        double deltaX = GOAL_X - robotX;
+        double deltaY = GOAL_Y - robotY;
+        
+        return Math.atan2(deltaY, deltaX);
+    }
+
+    /**
+     * Calculate turn power to face the goal
+     * @param kP proportional gain for turning (recommended: 0.5 to 1.5)
+     * @return turn power to apply (-1.0 to 1.0)
+     */
+    public double calculateTurnToGoal(double kP) {
+        double targetAngle = calculateHeadingToGoal();
+        double robotHeading = odo.getPosition().getHeading(org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.RADIANS);
+        
+        // Calculate heading error
+        double headingError = targetAngle - robotHeading;
+        
+        // Normalize error to [-π, π]
+        headingError = Math.atan2(Math.sin(headingError), Math.cos(headingError));
+        
+        // Apply proportional control
+        double turnPower = headingError * kP;
+        
+        // Clamp to valid motor power range
+        return Math.max(-1.0, Math.min(1.0, turnPower));
+    }
+
+    /**
+     * Drive with automatic goal facing
+     * @param axial forward/backward movement
+     * @param lateral left/right strafe
+     * @param mod speed modifier
+     * @param turnKP proportional gain for auto-turning to goal
+     */
+    public void driveWithGoalFacing(double axial, double lateral, double mod, double turnKP) {
+        double autoTurn = calculateTurnToGoal(turnKP);
+        controllerDrive(axial, lateral, autoTurn, mod);
     }
 
     public void MethRobot() {
