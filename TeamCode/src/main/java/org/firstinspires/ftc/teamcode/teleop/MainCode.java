@@ -36,12 +36,13 @@ public class MainCode extends LinearOpMode {
         // Initialize robot hardware
         robot.init();
 
+
         // Initialize odometry
         odo = robot.odo;
         odo.setOffsets(-6.25, 168.0);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-        //odo.resetPosAndIMU();
+        odo.resetPosAndIMU();
 
         // Initialize navigation system
         navigation = new EnhancedNavigation(robot, odo);
@@ -82,16 +83,20 @@ public class MainCode extends LinearOpMode {
                 shooterPower = 1;
             }
 
-            if (gamepad1.b) {
-                intakePower = 1;
-            }
-
+            // Intake controlled by left trigger (forward) or X button (backward)
             if (gamepad1.x) {
+                intakePower = 1;
+            } else if (gamepad1.left_trigger > 0) {
                 intakePower = -1;
+            } else {
+                intakePower = 0;
             }
 
-            if (gamepad1.y) {
-                intakePower = 0;
+            // Shootpush controlled by right trigger
+            if (gamepad1.right_trigger > 0) {
+                robot.shootpush.setPower(1);
+            } else {
+                robot.shootpush.setPower(0);
             }
 
             if (gamepad1.dpad_down) {

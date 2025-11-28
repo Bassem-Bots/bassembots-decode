@@ -23,6 +23,7 @@ public class RobotControl {
     private DcMotor rightBackDrive = null;
     public DcMotor shooter = null;
     public DcMotor intake = null;
+    public DcMotor shootpush = null;
     // public DcMotor armMotor = null;
     public GoBildaPinpointDriver odo = null;
     public boolean fieldCentric = false;
@@ -77,6 +78,7 @@ public class RobotControl {
                 "right_back_drive"
         );
         intake = myOpMode.hardwareMap.get(DcMotor.class, "intake");
+        shootpush = myOpMode.hardwareMap.get(DcMotor.class, "shootpush");
         shooter = myOpMode.hardwareMap.get(DcMotor.class, "shooter");
         //armMotor = myOpMode.hardwareMap.get(DcMotor.class, "arm_motor");
 
@@ -88,12 +90,14 @@ public class RobotControl {
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        shootpush.setDirection(DcMotor.Direction.FORWARD);
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shootpush.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
