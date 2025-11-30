@@ -23,6 +23,7 @@ public class MainCode extends LinearOpMode {
     private double mod = 1;
     private double slow = 1;
     private boolean fieldCentric = false;
+    private boolean blueTeam = true;
     private boolean goalFacingMode = false;
     private double shooterPower = 0;
     private double intakePower = 0;
@@ -43,7 +44,7 @@ public class MainCode extends LinearOpMode {
         odo.setOffsets(-6.25, 168.0);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-        odo.resetPosAndIMU();
+//        odo.resetPosAndIMU();
 
         // Initialize navigation system
         navigation = new EnhancedNavigation(robot, odo);
@@ -100,9 +101,29 @@ public class MainCode extends LinearOpMode {
             } else {
                 robot.shootpush.setPower(0);
             }
-
             if (gamepad1.dpad_down) {
-                navigation.navigateToPosition(0, 1,0,1);
+                if (blueTeam==true) {
+                    navigation.navigateToPosition(-1752.485, -282.589, -53.8, 1);
+                    shooterPower = 0.65;
+                }else{
+                    navigation.navigateToPosition(-1778.265, 250.272, 48.841, 1);
+                    shooterPower = 0.65;
+                }
+            }
+            if (gamepad1.y) {
+                if (blueTeam==true) {
+                    navigation.navigateToPosition(-2638.678, 515.177, -85, 1);
+                    shooterPower = 0.7;
+                }else{
+                    navigation.navigateToPosition(-2728.125, -548.333, 85, 1);
+                    shooterPower = 0.7;
+                }
+            }
+            if (gamepad1.dpad_left) {
+                blueTeam= true;
+            }
+            if (gamepad1.dpad_right) {
+                blueTeam= false;
             }
 
             boolean currentRightBumper = gamepad1.right_bumper;
@@ -124,12 +145,12 @@ public class MainCode extends LinearOpMode {
             lastDpadUpState = currentDpadUp;
 
             // Toggle goal-facing mode with dpad_left
-            boolean currentDpadLeft = gamepad1.dpad_left;
-            if (currentDpadLeft && !lastDpadLeftState) {
-                goalFacingMode = !goalFacingMode;
-                goalFacingExecuted = false; // Reset flag when toggling mode
-            }
-            lastDpadLeftState = currentDpadLeft;
+//            boolean currentDpadLeft = gamepad1.dpad_left;
+//            if (currentDpadLeft && !lastDpadLeftState) {
+//                goalFacingMode = !goalFacingMode;
+//                goalFacingExecuted = false; // Reset flag when toggling mode
+//            }
+//            lastDpadLeftState = currentDpadLeft;
 
             robot.shooter.setPower(shooterPower);
             robot.intake.setPower(intakePower);

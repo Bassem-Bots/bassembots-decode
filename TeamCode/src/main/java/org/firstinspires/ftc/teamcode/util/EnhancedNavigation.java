@@ -33,8 +33,8 @@ public class EnhancedNavigation {
     private static final double extD = 0.00025;
     private static final double extF = 0.01;
     // Error thresholds
-    private static final double POSITION_TOLERANCE_MM = 50.0;
-    private static final double HEADING_TOLERANCE_DEG = 4.0;
+    private static final double POSITION_TOLERANCE_MM = 6.0;
+    private static final double HEADING_TOLERANCE_DEG = 2.0;
 
     // Integral term limits
     private static final double MAX_TRANSLATION_INTEGRAL_ERROR = 200.0;
