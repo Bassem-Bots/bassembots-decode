@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.util.pedroPathing; // make sure this aligns with class location
+package org.firstinspires.ftc.teamcode.autonomous; // make sure this aligns with class location
 //import com.pedropathing.follower.Follower;
 //import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
@@ -6,7 +6,6 @@ import com.pedropathing.geometry.Pose;
 //import com.pedropathing.paths.PathChain;
 //import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 //
 //
 //
@@ -323,14 +322,12 @@ import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
-import com.pedropathing.geometry.BezierCurve;
-import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.util.RobotControl;
+import org.firstinspires.ftc.teamcode.util.pedroPathing.Constants;
 
 @Autonomous(name = "Blue Auto: Shoot 3", group = "Competition")
 public class AutoNewTest extends LinearOpMode {
@@ -346,7 +343,7 @@ public class AutoNewTest extends LinearOpMode {
     private final Pose startPose = new Pose(9, 60, Math.toRadians(180));
 
     // SHOOT: Ideally this is where your shooter aims best at the goal
-    private final Pose shootPose = new Pose(50, 36, Math.toRadians(50));
+    private final Pose shootPose = new Pose(68, 36, Math.toRadians(90));
 
     // PICKUP: Location of the balls on the floor (Spike Mark or Stack)
     // Adjusted to be slightly away so we can drive *through* it or stop *at* it
@@ -412,7 +409,7 @@ public class AutoNewTest extends LinearOpMode {
         // PHASE 3: GO TO PICKUP (AND INTAKE)
         // ----------------------------------------------------
         // Start intake BEFORE we start moving, or right as we start
-        robot.intake.setPower(1.0); // Turn on intake
+        robot.intake.setPower(1); // Turn on intake
 
         follower.followPath(shootToPickup, true);
         driveUntilDone("Driving to Pickup");
@@ -450,27 +447,36 @@ public class AutoNewTest extends LinearOpMode {
      */
     private void fireShots(int numberOfShots) {
         // 1. Spin up the shooter
-        robot.shooter.setPower(1.0);
-        sleep(600); // Wait for flywheel to get to speed
+        robot.shooter.setPower(.67);
+        telemetry.addData("fsrdgth", robot.shooter.getPower());
+
+        sleep(3400); // Wait for flywheel to get to speed
 
         // 2. Cycle the pusher for each ball
+
         for (int i = 0; i < numberOfShots; i++) {
             if (!opModeIsActive()) break;
 
             // Push ball in
+            if(i ==2)
+            {
+                robot.intake.setPower(-1.0);
+            }
             robot.shootpush.setPower(1.0);
-            sleep(400); // Wait for push
+            sleep(600);
+            if (i >0){
+                sleep(600);
 
-            // Retract/Stop pusher to let next ball fall in
-            robot.shootpush.setPower(0);
+            }
+
             // If your pusher needs to reverse to retract, change 0 to -1.0
-
-            sleep(400); // Wait for gravity to load the next ball
+            robot.intake.setPower(0);
+            robot.shootpush.setPower(0);
+            sleep(3900); // Wait for gravity to load the next ball
         }
 
         // 3. Stop the shooter after all shots
-        robot.shooter.setPower(0);
-        robot.shootpush.setPower(0);
+
     }
 
     /**

@@ -22,7 +22,7 @@ public class MainCode extends LinearOpMode {
     private EnhancedNavigation navigation;
     private double mod = 1;
     private double slow = 1;
-    private boolean fieldCentric = true;
+    private boolean fieldCentric = false;
     private boolean goalFacingMode = false;
     private double shooterPower = 0;
     private double intakePower = 0;
@@ -30,6 +30,7 @@ public class MainCode extends LinearOpMode {
     private boolean lastLeftBumperState = false;
     private boolean lastDpadUpState = false;
     private boolean lastDpadLeftState = false;
+    private boolean goalFacingExecuted = false;
 
     @Override
     public void runOpMode() {
@@ -58,9 +59,10 @@ public class MainCode extends LinearOpMode {
             double yaw = gamepad1.right_stick_x;
 
             // Use goal-facing mode if enabled, otherwise use manual yaw control
-            if (goalFacingMode) {
+            if (goalFacingMode && !goalFacingExecuted) {
                 robot.driveWithGoalFacing(axial, lateral, mod, 1.0);
-            } else {
+                goalFacingExecuted = true;
+            } else if (!goalFacingMode) {
                 robot.controllerDrive(axial, lateral, yaw, mod);
             }
 
@@ -125,6 +127,7 @@ public class MainCode extends LinearOpMode {
             boolean currentDpadLeft = gamepad1.dpad_left;
             if (currentDpadLeft && !lastDpadLeftState) {
                 goalFacingMode = !goalFacingMode;
+                goalFacingExecuted = false; // Reset flag when toggling mode
             }
             lastDpadLeftState = currentDpadLeft;
 
@@ -146,6 +149,7 @@ public class MainCode extends LinearOpMode {
             //telemetry.addData("Arm motor target", robot.armTarget);
             telemetry.addData("Robot Heading", "%.1f°", odo.getPosition().getHeading(AngleUnit.DEGREES));
             telemetry.addData("Goal Heading", "%.1f°", Math.toDegrees(robot.calculateHeadingToGoal()));
+            telemetry.addData("Speed", "%.1f°", shooterPower*100);
             telemetry.addData("Field Centric", fieldCentric);
             telemetry.addData("Goal Facing Mode", goalFacingMode ? "ON (dpad_left to toggle)" : "OFF (dpad_left to toggle)");
 

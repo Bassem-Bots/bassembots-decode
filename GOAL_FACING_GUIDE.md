@@ -55,6 +55,23 @@ robot.driveWithGoalFacing(0.5, 0, 0.8, 1.2);  // Drive forward while facing goal
 
 ## Tuning Tips
 
-- If robot oscillates (wobbles back and forth), reduce the kP value
-- If robot turns too slowly, increase the kP value
+**Fixed Oscillation Issue:**
+- Added PD control (Proportional + Derivative) instead of just P control
+- Added 3-degree deadband to stop micro-adjustments when close to target
+- Default values: kP = 0.5, kD = 0.1
+
+**If robot still oscillates:**
+- Reduce kP value (try 0.3-0.4)
+- Increase kD value (try 0.15-0.2)
+
+**If robot turns too slowly:**
+- Increase kP value (try 0.6-0.8)
+- Keep kD proportional (about 1/5 of kP)
+
+**Tuning in MainCode.java:**
+```java
+robot.driveWithGoalFacing(axial, lateral, mod, 0.5, 0.1);
+                                            //  ^kP  ^kD
+```
+
 - Make sure odometry is properly calibrated for accurate heading calculation
