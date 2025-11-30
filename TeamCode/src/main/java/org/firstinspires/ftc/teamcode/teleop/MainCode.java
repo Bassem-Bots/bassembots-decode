@@ -43,7 +43,7 @@ public class MainCode extends LinearOpMode {
         odo.setOffsets(-6.25, 168.0);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-        odo.resetPosAndIMU();
+//        odo.resetPosAndIMU();
 
         // Initialize navigation system
         navigation = new EnhancedNavigation(robot, odo);

@@ -347,7 +347,7 @@ public class AutoNewTest extends LinearOpMode {
 
     // PICKUP: Location of the balls on the floor (Spike Mark or Stack)
     // Adjusted to be slightly away so we can drive *through* it or stop *at* it
-    private final Pose pickupPose = new Pose(20, 60, Math.toRadians(0));
+    private final Pose pickupPose = new Pose(34, 63, Math.toRadians(0));
 
     // Paths
     private Path startToShoot;
@@ -422,6 +422,7 @@ public class AutoNewTest extends LinearOpMode {
         // ----------------------------------------------------
         // PHASE 4: GO BACK TO SHOOT
         // ----------------------------------------------------
+        follower.setMaxPower(0.67);
         follower.followPath(pickupToShoot, true);
         driveUntilDone("Returning to Shoot");
 
