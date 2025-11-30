@@ -103,19 +103,19 @@ public class MainCode extends LinearOpMode {
             }
             if (gamepad1.dpad_down) {
                 if (blueTeam==true) {
-                    navigation.navigateToPosition(-1752.485, -282.589, -53.8, 1);
+                    navigation.navigateToPosition(+1752.485+534.7, +282.589+885, -53.8+180, 1);
                     shooterPower = 0.65;
                 }else{
-                    navigation.navigateToPosition(-1778.265, 250.272, 48.841, 1);
+                    navigation.navigateToPosition(+1778.265+534.7, -250.272+885, +48.841-180, 1);
                     shooterPower = 0.65;
                 }
             }
             if (gamepad1.y) {
                 if (blueTeam==true) {
-                    navigation.navigateToPosition(-2638.678, 515.177, -85, 1);
+                    navigation.navigateToPosition(+2638.678+534.7, -515.177+885, 85, 1);
                     shooterPower = 0.7;
                 }else{
-                    navigation.navigateToPosition(-2728.125, -548.333, 85, 1);
+                    navigation.navigateToPosition(+2728.125+534.7, +548.333+885, -85, 1);
                     shooterPower = 0.7;
                 }
             }
