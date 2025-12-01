@@ -83,7 +83,7 @@ public class MainCode extends LinearOpMode {
             }
 
             if (gamepad1.a) {
-                shooterPower = 1;
+                shooterPower = 0.7;
             }
 
             // Intake controlled by left trigger (forward) or X button (backward)
@@ -103,20 +103,20 @@ public class MainCode extends LinearOpMode {
             }
             if (gamepad1.dpad_down) {
                 if (blueTeam==true) {
-                    navigation.navigateToPosition(+1752.485+534.7, +282.589+885, -53.8+180, 1);
-                    shooterPower = 0.65;
+                    navigation.navigateToPosition(1687.8, 1689.18, -50.8,1);
+                    shooterPower = 0.6;
                 }else{
-                    navigation.navigateToPosition(+1778.265+534.7, -250.272+885, +48.841-180, 1);
-                    shooterPower = 0.65;
+                    navigation.navigateToPosition(1483, 2104, 46.48, 1);
+                    shooterPower = 0.6;
                 }
             }
             if (gamepad1.y) {
                 if (blueTeam==true) {
-                    navigation.navigateToPosition(+2638.678+534.7, -515.177+885, 85, 1);
-                    shooterPower = 0.7;
+                    navigation.navigateToPosition(667, 2268, -87.2, 1);
+                    shooterPower = 0.63;
                 }else{
-                    navigation.navigateToPosition(+2728.125+534.7, +548.333+885, -85, 1);
-                    shooterPower = 0.7;
+                    navigation.navigateToPosition(564.14, 1338.2, 92,1);
+                    shooterPower = 0.65;
                 }
             }
             if (gamepad1.dpad_left) {
@@ -128,21 +128,21 @@ public class MainCode extends LinearOpMode {
 
             boolean currentRightBumper = gamepad1.right_bumper;
             if (currentRightBumper && !lastRightBumperState) {
-                shooterPower = Math.min(1.0, shooterPower + 0.1);
+                shooterPower = Math.min(1.0, shooterPower + 0.05);
             }
             lastRightBumperState = currentRightBumper;
 
             boolean currentLeftBumper = gamepad1.left_bumper;
             if (currentLeftBumper && !lastLeftBumperState) {
-                shooterPower = Math.max(-1.0, shooterPower - 0.1);
+                shooterPower = Math.max(-1.0, shooterPower - 0.05);
             }
             lastLeftBumperState = currentLeftBumper;
 
-            boolean currentDpadUp = gamepad1.dpad_up;
-            if (currentDpadUp && !lastDpadUpState) {
-                odo.resetPosAndIMU();
-            }
-            lastDpadUpState = currentDpadUp;
+//            boolean currentDpadUp = gamepad1.dpad_up;
+//            if (currentDpadUp && !lastDpadUpState) {
+//                odo.resetPosAndIMU();
+//            }
+//            lastDpadUpState = currentDpadUp;
 
             // Toggle goal-facing mode with dpad_left
 //            boolean currentDpadLeft = gamepad1.dpad_left;
@@ -173,7 +173,6 @@ public class MainCode extends LinearOpMode {
             telemetry.addData("Speed", "%.1f°", shooterPower*100);
             telemetry.addData("Field Centric", fieldCentric);
             telemetry.addData("Goal Facing Mode", goalFacingMode ? "ON (dpad_left to toggle)" : "OFF (dpad_left to toggle)");
-
             telemetry.update();
         }
 
