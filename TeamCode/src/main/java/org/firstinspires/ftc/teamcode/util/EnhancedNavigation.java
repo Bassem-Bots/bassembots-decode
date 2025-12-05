@@ -6,10 +6,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import org.firstinspires.ftc.teamcode.util.RobotControl;
+import org.firstinspires.ftc.teamcode.util.RobotControlBattery;
 import org.firstinspires.ftc.teamcode.util.GoBildaPinpointDriver;
 
 public class EnhancedNavigation {
     private RobotControl robot;
+    private RobotControlBattery robotBattery;
     public GoBildaPinpointDriver odo;
     private ElapsedTime timer;
 
@@ -34,7 +36,7 @@ public class EnhancedNavigation {
     private static final double extF = 0.01;
     // Error thresholds
     private static final double POSITION_TOLERANCE_MM = 6.0;
-    private static final double HEADING_TOLERANCE_DEG = 2.0;
+    private static final double HEADING_TOLERANCE_DEG = 1.0;
 
     // Integral term limits
     private static final double MAX_TRANSLATION_INTEGRAL_ERROR = 200.0;
@@ -61,6 +63,14 @@ public class EnhancedNavigation {
 
     public EnhancedNavigation(RobotControl robotControl, GoBildaPinpointDriver odometry) {
         this.robot = robotControl;
+        this.robotBattery = null;
+        this.odo = odometry;
+        this.timer = new ElapsedTime();
+    }
+    
+    public EnhancedNavigation(RobotControlBattery robotControl, GoBildaPinpointDriver odometry) {
+        this.robot = null;
+        this.robotBattery = robotControl;
         this.odo = odometry;
         this.timer = new ElapsedTime();
     }
@@ -130,7 +140,11 @@ public class EnhancedNavigation {
         lastHeadingError = headingError;
 
         // Apply motor powers
+        if (robot != null) {
         robot.controllerDrive(axialPower, lateralPower, headingPower, power);
+        } else {
+            robotBattery.controllerDrive(axialPower, lateralPower, headingPower, power);
+        }
 
         // Check if target reached
         boolean atPosition = Math.abs(xError) < 9 &&
@@ -194,6 +208,77 @@ public class EnhancedNavigation {
      */
     public double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    /**
+     * Rotate the robot to point at target coordinates without moving translationally
+     * @param targetX Target X coordinate in mm
+     * @param targetY Target Y coordinate in mm
+     * @param power Power multiplier for rotation (0.0 to 1.0)
+     * @return true when robot is pointing at target coordinates within tolerance
+     */
+    public boolean rotateToPointAtCoordinates(double targetX, double targetY, double power) {
+        odo.update();
+        Pose2D currentPose = odo.getPosition();
+
+        // Get current position
+        double currentX = currentPose.getX(DistanceUnit.MM);
+        double currentY = currentPose.getY(DistanceUnit.MM);
+        double currentHeading = -currentPose.getHeading(AngleUnit.DEGREES);
+
+        // Calculate the heading needed to point at target coordinates
+        // Using same coordinate system as navigateToPosition
+        double deltaX = targetX - currentX;
+        double deltaY = targetY - currentY;
+        // Calculate base heading, add 180 degrees, normalize, then invert
+        double targetHeading = Math.toDegrees(Math.atan2(deltaY, deltaX));
+        targetHeading = targetHeading + 180.0;  // Add 180 to face opposite direction
+        targetHeading = normalizeAngle(targetHeading);  // Normalize to -180 to 180 range
+        targetHeading = -targetHeading;  // Invert at the end
+
+        // Calculate heading error
+        double headingError = normalizeAngle(targetHeading - currentHeading);
+
+        // Calculate time delta
+        dt = timer.seconds();
+        timer.reset();
+
+        // Handle first call or very large dt (prevents derivative spike)
+        if (dt <= 0 || dt > 1.0) {
+            dt = 0.02; // Assume ~50Hz loop rate
+        }
+
+        // Calculate derivative term for heading
+        double headingDerivative = (headingError - lastHeadingError) / dt;
+
+        // Update integral term with anti-windup
+        integralHeadingError = clamp(integralHeadingError + headingError * dt, -MAX_ROTATION_INTEGRAL_ERROR, MAX_ROTATION_INTEGRAL_ERROR);
+
+        // Calculate rotation PIDF
+        double headingPower = calculateRotationPIDF(headingError, integralHeadingError, headingDerivative);
+
+        // Apply power limits
+        headingPower = clamp(headingPower, -MAX_ROTATION_POWER, MAX_ROTATION_POWER);
+
+        // Apply minimum power threshold if needed
+        if (Math.abs(headingPower) < MIN_ROTATION_POWER && Math.abs(headingPower) > 0.01) {
+            headingPower = MIN_ROTATION_POWER * Math.signum(headingPower);
+        }
+
+        // Store heading error for next iteration
+        lastHeadingError = headingError;
+
+        // Apply motor powers - only rotation, no translation
+        if (robot != null) {
+            robot.controllerDrive(0, 0, headingPower, power);
+        } else {
+            robotBattery.controllerDrive(0, 0, headingPower, power);
+        }
+
+        // Check if pointing at target
+        boolean atHeading = Math.abs(headingError) < HEADING_TOLERANCE_DEG;
+
+        return atHeading;
     }
 
     /**
