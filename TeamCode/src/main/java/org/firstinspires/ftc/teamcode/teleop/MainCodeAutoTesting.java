@@ -14,11 +14,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import java.util.Locale;
 
-@TeleOp(name="Main Code With Auto Shooting Testing", group="Usethis")
+@TeleOp(name="Main Code - Dec 6", group="Usethis")
 public class MainCodeAutoTesting extends LinearOpMode {
-    // Target coordinates for shooting
-    private static final double TARGET_X = 800;  // mm
-    private static final double TARGET_Y = 3257;     // mm
+    // Target coordinates for shooting (dynamic based on team)
+    // Blue team: (615, 700)
+    // Red team: (800, 3257)
     private static final double NET_HEIGHT_INCHES = 37.0;  // inches
     private static final double NET_HEIGHT_MM = NET_HEIGHT_INCHES * 25.4;  // Convert to mm
     private static final double LAUNCH_ANGLE_DEG = 65.0;  // Launch angle of shooter (degrees, steeper than 45)
@@ -78,7 +78,7 @@ public class MainCodeAutoTesting extends LinearOpMode {
             // Rotate to point at coordinates when X button is pressed (skip normal drive)
             // Also calculate and set the correct shooter power for that distance
             if (gamepad1.x) {
-                navigation.rotateToPointAtCoordinates(TARGET_X, TARGET_Y, 1);
+                navigation.rotateToPointAtCoordinates(getTargetX(), getTargetY(), 1);
                 // Calculate distance and set shooter power
                 double distance = calculateDistanceToTarget();
                 shooterPower = calculateShooterPower(distance);
@@ -200,8 +200,8 @@ public class MainCodeAutoTesting extends LinearOpMode {
                     pos.getHeading(AngleUnit.DEGREES));
 
             // Calculate target heading for X button rotation
-            double targetX = TARGET_X;
-            double targetY = TARGET_Y;
+            double targetX = getTargetX();
+            double targetY = getTargetY();
             double currentX = pos.getX(DistanceUnit.MM);
             double currentY = pos.getY(DistanceUnit.MM);
             double deltaX = targetX - currentX;
@@ -243,6 +243,22 @@ public class MainCodeAutoTesting extends LinearOpMode {
     }
 
     /**
+     * Get target X coordinate based on team
+     * @return target X in mm
+     */
+    private double getTargetX() {
+        return blueTeam ? 750 : 800.0;
+    }
+
+    /**
+     * Get target Y coordinate based on team
+     * @return target Y in mm
+     */
+    private double getTargetY() {
+        return blueTeam ? 550.0 : 3257.0;
+    }
+
+    /**
      * Calculate the straight-line distance from robot to target coordinates
      * @return distance in mm
      */
@@ -252,8 +268,8 @@ public class MainCodeAutoTesting extends LinearOpMode {
         double currentX = pos.getX(DistanceUnit.MM);
         double currentY = pos.getY(DistanceUnit.MM);
         
-        double deltaX = TARGET_X - currentX;
-        double deltaY = TARGET_Y - currentY;
+        double deltaX = getTargetX() - currentX;
+        double deltaY = getTargetY() - currentY;
         
         return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     }
