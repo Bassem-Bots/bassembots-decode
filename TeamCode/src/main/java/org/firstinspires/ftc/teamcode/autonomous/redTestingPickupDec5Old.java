@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.util.RobotControl;
 import org.firstinspires.ftc.teamcode.util.pedroPathing.Constants;
 
-@Autonomous(name = "RED Team Auto 5 Balls - Dec 6", group = "Competition2")
-public class redTestingPickupDec5 extends LinearOpMode {
+@Autonomous(name = "RED Team Auto 5 Balls - Dec 6", group = "Competition")
+public class redTestingPickupDec5Old extends LinearOpMode {
 
     private Follower follower;
     private RobotControl robot;

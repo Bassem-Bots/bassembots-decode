@@ -12,7 +12,7 @@ import org.firstinspires.ftc.teamcode.util.RobotControl;
 import org.firstinspires.ftc.teamcode.util.pedroPathing.Constants;
 
 @Autonomous(name = "BLUE Team Auto 5 Balls - Dec 6", group = "Competition2")
-public class blueTestingPickupDec5 extends LinearOpMode {
+public class blueTestingPickupDec5WalkOut extends LinearOpMode {
 
     private Follower follower;
     private RobotControl robot;
