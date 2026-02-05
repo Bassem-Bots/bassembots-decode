@@ -11,7 +11,6 @@ import org.firstinspires.ftc.teamcode.util.GoBildaPinpointDriver;
 
 public class EnhancedNavigation {
     private RobotControl robot;
-    private RobotControlBattery robotBattery;
     public GoBildaPinpointDriver odo;
     private ElapsedTime timer;
 
@@ -63,14 +62,12 @@ public class EnhancedNavigation {
 
     public EnhancedNavigation(RobotControl robotControl, GoBildaPinpointDriver odometry) {
         this.robot = robotControl;
-        this.robotBattery = null;
         this.odo = odometry;
         this.timer = new ElapsedTime();
     }
     
     public EnhancedNavigation(RobotControlBattery robotControl, GoBildaPinpointDriver odometry) {
         this.robot = null;
-        this.robotBattery = robotControl;
         this.odo = odometry;
         this.timer = new ElapsedTime();
     }
@@ -139,12 +136,7 @@ public class EnhancedNavigation {
         lastYError = yError;
         lastHeadingError = headingError;
 
-        // Apply motor powers
-        if (robot != null) {
         robot.controllerDrive(axialPower, lateralPower, headingPower, power);
-        } else {
-            robotBattery.controllerDrive(axialPower, lateralPower, headingPower, power);
-        }
 
         // Check if target reached
         boolean atPosition = Math.abs(xError) < 9 &&
@@ -269,11 +261,7 @@ public class EnhancedNavigation {
         lastHeadingError = headingError;
 
         // Apply motor powers - only rotation, no translation
-        if (robot != null) {
-            robot.controllerDrive(0, 0, headingPower, power);
-        } else {
-            robotBattery.controllerDrive(0, 0, headingPower, power);
-        }
+        robot.controllerDrive(0, 0, headingPower, power);
 
         // Check if pointing at target
         boolean atHeading = Math.abs(headingError) < HEADING_TOLERANCE_DEG;

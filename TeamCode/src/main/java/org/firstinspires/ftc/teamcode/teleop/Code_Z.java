@@ -188,7 +188,7 @@ public class Code_Z extends LinearOpMode {
                     break;
             }
             if (shooterEnabled) {
-                robot.setShooterPower(currentShooterPower);
+                robot.setShooterPower(currentShooterPower.getPower());
             }
         }
 
@@ -212,7 +212,7 @@ public class Code_Z extends LinearOpMode {
                     break;
             }
             if (shooterEnabled) {
-                robot.setShooterPower(currentShooterPower);
+                robot.setShooterPower(currentShooterPower.getPower());
             }
         }
 
@@ -228,9 +228,9 @@ public class Code_Z extends LinearOpMode {
         if (gamepad1.x && !lastXPressed) {
             shooterEnabled = !shooterEnabled;
             if (shooterEnabled) {
-                robot.setShooterPower(currentShooterPower);
+                robot.setShooterPower(currentShooterPower.getPower());
             } else {
-                robot.setShooterPower(ShooterPower.OFF);
+                robot.setShooterPower(ShooterPower.OFF.getPower());
             }
         }
         lastXPressed = gamepad1.x;

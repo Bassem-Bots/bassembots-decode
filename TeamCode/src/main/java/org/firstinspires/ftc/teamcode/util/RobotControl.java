@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode.util;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.util.GoBildaPinpointDriver;
@@ -21,7 +23,21 @@ public class RobotControl {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
-    public DcMotor shooter = null;
+    public DcMotorEx shooter = null;
+    private Servo angleExtender = null;
+
+    // Shooter motor constants for velocity control
+    private static final double SHOOTER_MAX_RPM = 6000.0;  // 6k RPM motor
+    // IMPORTANT: Adjust TICKS_PER_REV based on your motor's actual encoder resolution
+    // For quadrature encoders: CPR * 4 = ticks per revolution
+    // Common values:
+    //   - GoBILDA 5202/5203: 28 CPR * 4 = 112 ticks/rev
+    //   - REV Core Hex: 288 ticks/rev (72 CPR * 4)
+    //   - NeveRest: 1120 ticks/rev (280 CPR * 4)
+    //   - Some 6k RPM motors: May have different encoder counts
+    // If motor always runs at max speed, TICKS_PER_REV is likely too low - try increasing it
+    private static final double TICKS_PER_REV = 28.0;  // ADJUST THIS VALUE - start with 112, increase if motor runs too fast
+    private static final double MAX_TICKS_PER_SEC = (SHOOTER_MAX_RPM / 60.0) * TICKS_PER_REV;  // Max velocity in ticks per second
     public DcMotor intake = null;
     public DcMotor shootpush = null;
     // public DcMotor armMotor = null;
@@ -31,6 +47,7 @@ public class RobotControl {
     // public static final double ARM_HANG_POS = -1500;
     public static final double GOAL_X = 2633.769; // mm
     public static final double GOAL_Y = 1004.791; // mm
+    public boolean angleExtended = false;
     // public static final int MAX_EXTENSION = -2150;
     // public static final double TICKS_PER_DEGREE = (double) 2500 / 360;
     // public static final double TICKS_PER_MM = 1;
@@ -79,7 +96,12 @@ public class RobotControl {
         );
         intake = myOpMode.hardwareMap.get(DcMotor.class, "intake");
         shootpush = myOpMode.hardwareMap.get(DcMotor.class, "shootpush");
-        shooter = myOpMode.hardwareMap.get(DcMotor.class, "shooter");
+        shooter = myOpMode.hardwareMap.get(DcMotorEx.class, "shooter");
+        angleExtender = myOpMode.hardwareMap.get(Servo.class, "angleExtender");
+
+        // Configure shooter for velocity control
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         //armMotor = myOpMode.hardwareMap.get(DcMotor.class, "arm_motor");
 
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
@@ -96,7 +118,6 @@ public class RobotControl {
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shootpush.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
@@ -189,10 +210,10 @@ public class RobotControl {
         odo.update();
         double robotX = odo.getPosition().getX(org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.MM);
         double robotY = odo.getPosition().getY(org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit.MM);
-        
+
         double deltaX = GOAL_X - robotX;
         double deltaY = GOAL_Y - robotY;
-        
+
         return Math.atan2(deltaY, deltaX);
     }
 
@@ -204,16 +225,16 @@ public class RobotControl {
     public double calculateTurnToGoal(double kP) {
         double targetAngle = calculateHeadingToGoal();
         double robotHeading = odo.getPosition().getHeading(org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.RADIANS);
-        
+
         // Calculate heading error
         double headingError = targetAngle - robotHeading;
-        
+
         // Normalize error to [-π, π]
         headingError = Math.atan2(Math.sin(headingError), Math.cos(headingError));
-        
+
         // Apply proportional control
         double turnPower = headingError * kP;
-        
+
         // Clamp to valid motor power range
         return Math.max(-1.0, Math.min(1.0, turnPower));
     }
@@ -246,11 +267,41 @@ public class RobotControl {
     }
 
     public void initShooter() {
-        shooter.setPower(1);
+        setShooterVelocity(1.0);
     }
 
-    public void setShooterPower(ShooterPower shooterPower) {
-        shooter.setPower(shooterPower.getPower());
+    /**
+     * Set shooter velocity using velocity control (0.0 to 1.0)
+     * @param power Power from 0.0 to 1.0 (1.0 = max RPM)
+     */
+    public void setShooterVelocity(double power) {
+        // Clamp power to valid range
+        power = Math.max(0.0, Math.min(1.0, power));
+
+        // Convert power to ticks per second
+        // Formula: velocity (ticks/sec) = power * (RPM / 60) * ticks_per_rev
+        double velocity = power * MAX_TICKS_PER_SEC;
+
+        // Ensure velocity is positive (forward direction)
+        velocity = Math.abs(velocity);
+        if (getShooterVelocity() >= velocity) {
+            shooter.setPower(power);
+        } else {
+            shooter.setPower(1);
+        }
+
+    }
+
+    /**
+     * Get current shooter velocity for debugging
+     * @return current velocity in ticks per second
+     */
+    public double getShooterVelocity() {
+        return shooter.getVelocity();
+    }
+
+    public void setShooterPower(double shooterPower) {
+        setShooterVelocity(shooterPower);
     }
 
     public void runIntake() {
@@ -263,5 +314,9 @@ public class RobotControl {
 
     public void reverseIntake() {
         intake.setPower(-1.0);
+    }
+
+    public void servoToggle() {
+        angleExtender.setPosition(angleExtended ? 0.5 : 0);
     }
 }
