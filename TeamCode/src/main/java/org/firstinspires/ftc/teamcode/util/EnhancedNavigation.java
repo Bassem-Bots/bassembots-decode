@@ -4,10 +4,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import org.firstinspires.ftc.teamcode.util.RobotControl;
-import org.firstinspires.ftc.teamcode.util.RobotControlBattery;
-import org.firstinspires.ftc.teamcode.util.GoBildaPinpointDriver;
 
 public class EnhancedNavigation {
     private RobotControl robot;
@@ -62,12 +58,6 @@ public class EnhancedNavigation {
 
     public EnhancedNavigation(RobotControl robotControl, GoBildaPinpointDriver odometry) {
         this.robot = robotControl;
-        this.odo = odometry;
-        this.timer = new ElapsedTime();
-    }
-    
-    public EnhancedNavigation(RobotControlBattery robotControl, GoBildaPinpointDriver odometry) {
-        this.robot = null;
         this.odo = odometry;
         this.timer = new ElapsedTime();
     }
