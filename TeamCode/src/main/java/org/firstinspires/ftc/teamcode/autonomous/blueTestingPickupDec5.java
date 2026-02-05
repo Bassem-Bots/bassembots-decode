@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.util.RobotControl;
 import org.firstinspires.ftc.teamcode.util.pedroPathing.Constants;
 
-@Autonomous(name = "BLUE Team Auto 5 Balls - Dec 6", group = "Competition")
+@Autonomous(name = "BLUE Team Auto 5 Balls - Dec 6", group = "Competition2")
 public class blueTestingPickupDec5 extends LinearOpMode {
 
     private Follower follower;
@@ -106,7 +106,7 @@ public class blueTestingPickupDec5 extends LinearOpMode {
             telemetry.update();
 
 //             Fire 3 shots using our helper method
-            fireShots(3, .70f, 1);
+            fireShots(3, .705f, 1);
         }
 
         robot.shooter.setPower(0.45);
@@ -132,7 +132,7 @@ public class blueTestingPickupDec5 extends LinearOpMode {
             telemetry.update();
 
 //             Fire 2 shots using our helper method
-            fireShots(2, .70f, 2);
+            fireShots(2, .705f, 2);
         }
 
         robot.shooter.setPower(0);

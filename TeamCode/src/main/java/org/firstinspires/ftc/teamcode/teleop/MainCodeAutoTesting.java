@@ -14,7 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import java.util.Locale;
 
-@TeleOp(name="Main Code - Dec 6", group="Usethis")
+@TeleOp(name="Main Code - Dec 6", group="Comp")
 public class MainCodeAutoTesting extends LinearOpMode {
     // Target coordinates for shooting (dynamic based on team)
     // Blue team: (615, 700)
@@ -48,6 +48,7 @@ public class MainCodeAutoTesting extends LinearOpMode {
     private boolean lastDpadLeftState = false;
     private boolean goalFacingExecuted = false;
     private boolean lastBButtonState = false;
+    private boolean lastXButtonState = false;  // Track X button state to detect presses
 
     @Override
     public void runOpMode() {
@@ -75,9 +76,17 @@ public class MainCodeAutoTesting extends LinearOpMode {
             double lateral = gamepad1.left_stick_x;
             double yaw = gamepad1.right_stick_x;
 
+            // X button state tracking for reliable detection
+            boolean currentXButton = gamepad1.x;
+            
             // Rotate to point at coordinates when X button is pressed (skip normal drive)
             // Also calculate and set the correct shooter power for that distance
-            if (gamepad1.x) {
+            if (currentXButton) {
+                // Reset navigation controller on first press to ensure clean state
+                if (!lastXButtonState) {
+                    navigation.resetController();
+                }
+                
                 navigation.rotateToPointAtCoordinates(getTargetX(), getTargetY(), 1);
                 // Calculate distance and set shooter power
                 double distance = calculateDistanceToTarget();
@@ -173,6 +182,9 @@ public class MainCodeAutoTesting extends LinearOpMode {
                 shooterPower = Math.max(-1.0, shooterPower - 0.05);
             }
             lastLeftBumperState = currentLeftBumper;
+            
+            // Update X button state (must be at end of loop to track button presses)
+            lastXButtonState = currentXButton;
 
 //            boolean currentDpadUp = gamepad1.dpad_up;
 //            if (currentDpadUp && !lastDpadUpState) {

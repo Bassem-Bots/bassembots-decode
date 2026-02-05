@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.util.RobotControl;
 import org.firstinspires.ftc.teamcode.util.pedroPathing.Constants;
 
-@Autonomous(name = "RED Team Auto 5 Balls - Dec 6", group = "Competition2")
-public class redTestingPickupDec5 extends LinearOpMode {
+@Autonomous(name = "COMP RED Team Auto 5 Balls - Dec 6", group = "Competition2")
+public class redTestingPickupDec5InComp extends LinearOpMode {
 
     private Follower follower;
     private RobotControl robot;
@@ -29,7 +29,7 @@ public class redTestingPickupDec5 extends LinearOpMode {
 
     // SHOOT: Ideally this is where your shooter aims best at the goal
     private final Pose shootPose = new Pose(132, 93, Math.toRadians(-100));
-    private final Pose shootPose2 = new Pose(122, 93, Math.toRadians(-75));
+    private final Pose shootPose2 = new Pose(122, 93, Math.toRadians(-65));
 
     // PICKUP: Location of the balls on the floor (Spike Mark or Stack)
     // Adjusted to be slightly away so we can drive *through* it or stop *at* it
