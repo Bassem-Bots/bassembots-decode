@@ -11,7 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.util.RobotControl;
 import org.firstinspires.ftc.teamcode.util.pedroPathing.Constants;
 
-@Autonomous(name = "BLUE Team Auto 5 Balls - Dec 6", group = "Competition2")
+@Autonomous(name = "BLUE Team Auto 5 Balls - Dec 6 Walk Out", group = "Competition2")
 public class blueTestingPickupDec5WalkOut extends LinearOpMode {
 
     private Follower follower;
@@ -30,13 +30,14 @@ public class blueTestingPickupDec5WalkOut extends LinearOpMode {
     // SHOOT: Ideally this is where your shooter aims best at the goal
     private final Pose shootPose = new Pose(134, 52, Math.toRadians(87));
     private final Pose shootPose2 = new Pose(130, 52, Math.toRadians(52.5));
+    private final Pose forward = new Pose(120, 52, Math.toRadians(52.5));
 
     // PICKUP: Location of the balls on the floor (Spike Mark or Stack)
     // Adjusted to be slightly away so we can drive *through* it or stop *at* it
 
     // Paths
     private Path startToShoot ;
-    private PathChain shootToUp, upToSide, sideToPickup, pickupToShoot;
+    private PathChain shootToUp, upToSide, sideToPickup, pickupToShoot, lastadjust;
 
     public void buildPaths() {
         // Path 1: Drive from Start to Shooting Position
@@ -61,6 +62,10 @@ public class blueTestingPickupDec5WalkOut extends LinearOpMode {
         pickupToShoot = follower.pathBuilder()
                 .addPath(new BezierLine(pickupPose, shootPose2))
                 .setLinearHeadingInterpolation(pickupPose.getHeading(), shootPose2.getHeading())
+                .build();
+        lastadjust = follower.pathBuilder()
+                .addPath(new BezierLine(shootPose2, forward))
+                .setLinearHeadingInterpolation(shootPose2.getHeading(), forward.getHeading())
                 .build();
 
 ////        // Path 3: Drive from Pickup back to Shoot
@@ -127,14 +132,17 @@ public class blueTestingPickupDec5WalkOut extends LinearOpMode {
         follower.followPath(pickupToShoot);
         driveUntilDone("moving to shoot");
 
+
+
         if (opModeIsActive()) {
             telemetry.addData("Action", "Shooting 3 Balls");
             telemetry.update();
 
 //             Fire 2 shots using our helper method
-            fireShots(2, .705f, 2);
+            fireShots(1, .705f, 2);
         }
-
+        follower.followPath(lastadjust);
+        driveUntilDone("lastadjust");
         robot.shooter.setPower(0);
         robot.intake.setPower(0);
     }

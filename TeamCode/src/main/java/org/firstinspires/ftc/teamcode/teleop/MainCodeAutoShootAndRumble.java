@@ -1,20 +1,22 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
-import org.firstinspires.ftc.teamcode.util.RobotControl;
-import org.firstinspires.ftc.teamcode.util.GoBildaPinpointDriver;
-import org.firstinspires.ftc.teamcode.util.EnhancedNavigation;
-
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
+import org.firstinspires.ftc.teamcode.util.EnhancedNavigation;
+import org.firstinspires.ftc.teamcode.util.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.util.RobotControl;
+
 import java.util.Locale;
 
-@TeleOp(name="Main Code - Dec 6", group="Usethis")
+@TeleOp(name="Main Code - Dec 6 With Rumble", group="Comp")
 public class MainCodeAutoShootAndRumble extends LinearOpMode {
     // Target coordinates for shooting (dynamic based on team)
     // Blue team: (615, 700)
@@ -48,6 +50,17 @@ public class MainCodeAutoShootAndRumble extends LinearOpMode {
     private boolean lastDpadLeftState = false;
     private boolean goalFacingExecuted = false;
     private boolean lastBButtonState = false;
+    
+    // X button state tracking for rumble feature
+    private boolean lastXButtonState = false;
+    private boolean waitingForSpeed = false;
+    private double targetShooterPower = 0;
+    private ElapsedTime speedWaitTimer = new ElapsedTime();
+    private static final double VELOCITY_STABLE_TIME = 1.3;  // Seconds velocity must be stable before rumble (was 0.3, added 1.0)
+    private static final double VELOCITY_STABILITY_TOLERANCE = 100.0;  // Velocity change tolerance for stability check
+    private static final double EXTRA_WAIT_TIME = 0.5;  // Extra second to wait before rumbling
+    private double lastVelocityReading = 0.0;
+    private ElapsedTime velocityStableTimer = new ElapsedTime();
 
     @Override
     public void runOpMode() {
@@ -75,15 +88,50 @@ public class MainCodeAutoShootAndRumble extends LinearOpMode {
             double lateral = gamepad1.left_stick_x;
             double yaw = gamepad1.right_stick_x;
 
+            // X button state tracking
+            boolean currentXButton = gamepad1.x;
+            
             // Rotate to point at coordinates when X button is pressed (skip normal drive)
             // Also calculate and set the correct shooter power for that distance
-            if (gamepad1.x) {
+            if (currentXButton) {
+                // Reset waiting state if X is pressed again (always reset to prevent stuck state)
+                waitingForSpeed = false;
+                lastVelocityReading = 0.0;  // Reset velocity tracking
+                
+                // Reset navigation controller on first press to ensure clean state
+                if (!lastXButtonState) {
+                    navigation.resetController();
+                }
+                
                 navigation.rotateToPointAtCoordinates(getTargetX(), getTargetY(), 1);
                 // Calculate distance and set shooter power
                 double distance = calculateDistanceToTarget();
                 shooterPower = calculateShooterPower(distance);
                 robot.shooter.setPower(shooterPower);
             } else {
+                // Check if X button was just released (transition from pressed to not pressed)
+                if (lastXButtonState && !currentXButton) {
+                    // X button was just released - start monitoring motor speed
+                    // Only start monitoring if shooter power is actually set (not 0)
+                    if (shooterPower > 0.01) {
+                        waitingForSpeed = true;
+                        targetShooterPower = shooterPower;
+                        speedWaitTimer.reset();
+                        velocityStableTimer.reset();
+                        lastVelocityReading = 0.0;  // Reset velocity tracking
+                    } else {
+                        // Shooter is off, don't start monitoring
+                        waitingForSpeed = false;
+                    }
+                }
+                
+                // Monitor motor speed if waiting (but only if shooter is actually on)
+                if (waitingForSpeed && shooterPower > 0.01) {
+                    checkShooterSpeedAndRumble();
+                } else if (waitingForSpeed && shooterPower <= 0.01) {
+                    // Shooter was turned off while waiting - cancel monitoring
+                    waitingForSpeed = false;
+                }
                 // Use goal-facing mode if enabled, otherwise use manual yaw control
                 if (goalFacingMode && !goalFacingExecuted) {
                     robot.driveWithGoalFacing(axial, lateral, mod, 1.0);
@@ -130,6 +178,9 @@ public class MainCodeAutoShootAndRumble extends LinearOpMode {
             }
             lastBButtonState = currentBButton;
             */
+            
+            // Update X button state (must be at end of loop to track button release)
+            lastXButtonState = currentXButton;
 
             // Shootpush controlled by right trigger
             if (gamepad1.right_trigger > 0) {
@@ -222,7 +273,7 @@ public class MainCodeAutoShootAndRumble extends LinearOpMode {
             //telemetry.addData("Arm motor target", robot.armTarget);
             telemetry.addData("Robot Heading", "%.1f°", odo.getPosition().getHeading(AngleUnit.DEGREES));
             telemetry.addData("Goal Heading", "%.1f°", Math.toDegrees(robot.calculateHeadingToGoal()));
-            if (gamepad1.x) {
+            if (currentXButton) {
                 telemetry.addData("HEADING GOAL", "%.1f°", headingGoal);
             }
             telemetry.addData("Speed", "%.1f°", shooterPower*100);
@@ -237,9 +288,122 @@ public class MainCodeAutoShootAndRumble extends LinearOpMode {
             telemetry.addData("Calculated Power", "%.3f", calculatedPower);
             telemetry.addData("Battery Voltage", "%.2f V", batteryVoltage);
             
+            // Debug: Show X button state
+            telemetry.addData("X Button", currentXButton ? "PRESSED" : "NOT PRESSED");
+            telemetry.addData("Last X Button", lastXButtonState ? "PRESSED" : "NOT PRESSED");
+            telemetry.addData("Waiting For Speed", waitingForSpeed ? "YES" : "NO");
+            
+            // Show rumble status and velocity info
+            if (waitingForSpeed) {
+                telemetry.addData("Shooter Status", "Waiting for speed...");
+                telemetry.addData("Target Power", "%.3f", targetShooterPower);
+                if (robot.shooter instanceof DcMotorEx) {
+                    DcMotorEx shooterEx = (DcMotorEx) robot.shooter;
+                    double currentVelocity = shooterEx.getVelocity();
+                    // Use absolute value in case motor direction is reversed
+                    double currentVelocityAbs = Math.abs(currentVelocity);
+                    double velocityChange = Math.abs(currentVelocityAbs - lastVelocityReading);
+                    telemetry.addData("Current Velocity (raw)", "%.1f ticks/sec", currentVelocity);
+                    telemetry.addData("Current Velocity (abs)", "%.1f ticks/sec", currentVelocityAbs);
+                    telemetry.addData("Last Velocity", "%.1f ticks/sec", lastVelocityReading);
+                    telemetry.addData("Velocity Change", "%.1f ticks/sec", velocityChange);
+                    telemetry.addData("Stable Time", "%.2f s", velocityStableTimer.seconds());
+                    telemetry.addData("Is Stable", (velocityChange <= VELOCITY_STABILITY_TOLERANCE) ? "YES" : "NO");
+                } else {
+                    telemetry.addData("Using Timing Method", "YES");
+                    telemetry.addData("Elapsed Time", "%.2f s", speedWaitTimer.seconds());
+                    // Calculate expected wait time for display (reuse batteryVoltage from above)
+                    double voltageRatio = REFERENCE_VOLTAGE / batteryVoltage;
+                    voltageRatio = 1.0 + (voltageRatio - 1.0) * VOLTAGE_COMPENSATION_FACTOR;
+                    voltageRatio = Math.max(0.88, Math.min(1.10, voltageRatio));
+                    double currentPower = shooterPower;
+                    double deltaPower = Math.abs(targetShooterPower - currentPower);
+                    double expectedWait = deltaPower * WAIT_TIME_CONSTANT * voltageRatio;
+                    telemetry.addData("Expected Wait", "%.2f s", expectedWait);
+                }
+            }
+            
             telemetry.update();
         }
 
+    }
+
+    /**
+     * Check if shooter motor has reached target speed and rumble controller when ready
+     * Uses velocity feedback if motor is DcMotorEx, otherwise uses timing method
+     */
+    private void checkShooterSpeedAndRumble() {
+        // Safety checks: only proceed if waiting, target power is valid, and shooter is actually on
+        if (!waitingForSpeed || targetShooterPower <= 0.01 || shooterPower <= 0.01) {
+            // If shooter is off, cancel waiting
+            if (shooterPower <= 0.01) {
+                waitingForSpeed = false;
+            }
+            return;
+        }
+        
+        // Try to use velocity feedback if motor is DcMotorEx
+        // Don't change motor mode - just read velocity if available
+        if (robot.shooter instanceof DcMotorEx) {
+            DcMotorEx shooterEx = (DcMotorEx) robot.shooter;
+            
+            // Get current velocity (use absolute value in case direction is reversed)
+            // Only read if motor is in a mode that supports velocity reading
+            double currentVelocity = 0.0;
+            try {
+                currentVelocity = shooterEx.getVelocity();
+            } catch (Exception e) {
+                // If velocity reading fails, fall back to timing method
+                // (This shouldn't happen, but just in case)
+            }
+            double currentVelocityAbs = Math.abs(currentVelocity);
+            
+            // Check if velocity has stabilized (not changing much)
+            // Since setPower() doesn't directly control velocity, we check for stability instead
+            if (lastVelocityReading == 0.0) {
+                // First reading - initialize
+                lastVelocityReading = currentVelocityAbs;
+                velocityStableTimer.reset();
+            } else {
+                // Check if velocity is stable (not changing much)
+                double velocityChange = Math.abs(currentVelocityAbs - lastVelocityReading);
+                
+                if (velocityChange <= VELOCITY_STABILITY_TOLERANCE) {
+                    // Velocity is stable - check if it's been stable long enough
+                    if (velocityStableTimer.seconds() >= VELOCITY_STABLE_TIME) {
+                        // Motor has stabilized at current speed - rumble controller
+                        gamepad1.rumble(200);  // Rumble for 200ms
+                        waitingForSpeed = false;
+                    }
+                } else {
+                    // Velocity is still changing - reset stability timer
+                    lastVelocityReading = currentVelocityAbs;
+                    velocityStableTimer.reset();
+                }
+            }
+        } else {
+            // Fallback to timing method
+            // Calculate wait time based on power change and battery voltage
+            double currentPower = shooterPower;
+            double deltaPower = Math.abs(targetShooterPower - currentPower);
+            
+            // Get battery voltage for compensation
+            double batteryVoltage = getBatteryVoltage();
+            double voltageRatio = REFERENCE_VOLTAGE / batteryVoltage;
+            voltageRatio = 1.0 + (voltageRatio - 1.0) * VOLTAGE_COMPENSATION_FACTOR;
+            voltageRatio = Math.max(0.88, Math.min(1.10, voltageRatio));
+            
+            // Calculate wait time
+            double baseWaitTime = deltaPower * WAIT_TIME_CONSTANT;
+            double waitTime = baseWaitTime * voltageRatio + EXTRA_WAIT_TIME;  // Add extra second
+            
+            // Check if enough time has passed
+            if (speedWaitTimer.seconds() >= waitTime) {
+                // Motor should be at speed - rumble controller
+                gamepad1.rumble(300);  // Rumble for 200ms
+                waitingForSpeed = false;
+            }
+        }
     }
 
     /**
