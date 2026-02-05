@@ -15,7 +15,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import java.util.Locale;
 
 @TeleOp(name="Main Code - Dec 6", group="Usethis")
-public class MainCodeAutoTesting extends LinearOpMode {
+public class MainCodeAutoShootAndRumble extends LinearOpMode {
     // Target coordinates for shooting (dynamic based on team)
     // Blue team: (615, 700)
     // Red team: (800, 3257)
