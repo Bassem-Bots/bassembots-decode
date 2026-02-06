@@ -276,22 +276,22 @@ public class RobotControl {
      * @param power Power from 0.0 to 1.0 (1.0 = max RPM)
      */
     public void setShooterVelocity(double power) {
-        // Clamp power to valid range
-        power *= (12 / getBatteryVoltage() - 1) * 0.4 + 1;
-        power = Math.max(0.0, Math.min(1.0, power));
+        // Voltage compensation: Target 13.5V
+        // AppliedPower = TargetPower * (13.5 / CurrentVoltage)
+        double voltage = getBatteryVoltage();
+        if (voltage < 9.0) voltage = 9.0; // Protection against div/0 or brownout reading
 
-        // Convert power to ticks per second
-        // Formula: velocity (ticks/sec) = power * (RPM / 60) * ticks_per_rev
-        double velocity = power * MAX_TICKS_PER_SEC;
+        double compensationFactor = 13.5 / voltage;
+        
+        // Apply compensation
+        double compensatedPower = power * compensationFactor;
+        compensatedPower = Math.max(0.0, Math.min(1.0, compensatedPower));
 
-        // Ensure velocity is positive (forward direction)
-        velocity = Math.abs(velocity);
-        if (getShooterVelocity() >= velocity) {
-            shooter.setPower(power);
+        if (power > 0) {
+            shooter.setPower(compensatedPower);
         } else {
-            shooter.setPower(1);
+            shooter.setPower(0);
         }
-
     }
 
     /**
@@ -322,6 +322,16 @@ public class RobotControl {
         angleExtender.setPosition(angleExtended ? 0.5 : 0);
     }
 
+    public void setAngleExtenderPosition(double position) {
+        // Clamp to valid servo range [0.0, 1.0]
+        position = Math.max(0.0, Math.min(1.0, position));
+        angleExtender.setPosition(position);
+    }
+
+    public double getAngleExtenderPosition() {
+        return angleExtender.getPosition();
+    }
+
     public double getBatteryVoltage() {
         double minVoltage = Double.POSITIVE_INFINITY;
 
@@ -337,5 +347,90 @@ public class RobotControl {
 
     public double powerToVelocity(double power) {
         return power * MAX_TICKS_PER_SEC;
+    }
+
+    // --- New Auto-Aim Logic ---
+
+    public static final double GRAVITY_MM_S2 = 9810.0;
+    // Calibrated: 9000.0 to widen the power usage range (Sensitivity fix)
+    public static final double PROJECTILE_VELOCITY_MM_S_AT_MAX = 9000.0;
+    public static final double LAUNCHER_HEIGHT_MM = 350.0; // Est. 14 inches from ground
+
+    public static class ShootingSolution {
+        public double power;
+        public double angleDeg;
+        
+        public ShootingSolution(double power, double angleDeg) {
+            this.power = power;
+            this.angleDeg = angleDeg;
+        }
+    }
+
+    public void setLauncherAngle(double targetAngleDeg) {
+        // Clamp angle
+        targetAngleDeg = Math.max(45.0, Math.min(70.0, targetAngleDeg));
+        
+        // Mapping: 45 -> 0.0, 70 -> 0.75
+        // Slope = 0.75 / 25 = 0.03
+        double position = (targetAngleDeg - 45.0) * 0.03;
+        
+        setAngleExtenderPosition(position);
+    }
+
+    public ShootingSolution calculateShootingSolution(double distanceMM, double targetNetHeightMM) {
+        // Correct for launcher height
+        double heightDeltaMM = targetNetHeightMM - LAUNCHER_HEIGHT_MM;
+
+        // Strategy V5: Explicit Linear Mapping
+        // User complains angle is "always 45". 
+        // We will force it to change based on distance.
+        // Close (500mm) -> Steep (60 deg)
+        // Far (2000mm)  -> Flat (45 deg)
+        
+        double closeDist = 500.0;
+        double farDist = 4500.0;
+        double steepAngle = 70.0;
+        double flatAngle = 45.0;
+        
+        double targetAngle;
+        if (distanceMM <= closeDist) {
+            targetAngle = steepAngle;
+        } else if (distanceMM >= farDist) {
+            targetAngle = flatAngle;
+        } else {
+            // Linear Interpolation
+            double fraction = (distanceMM - closeDist) / (farDist - closeDist);
+            targetAngle = steepAngle - fraction * (steepAngle - flatAngle);
+        }
+        
+        // Clamp to servo limits [45, 70] just in case
+        targetAngle = Math.max(45.0, Math.min(70.0, targetAngle));
+        
+        // Calculate exact power needed for this specific angle.
+        double requiredPower = calculatePowerForFixedAngle(distanceMM, heightDeltaMM, targetAngle);
+        
+        return new ShootingSolution(Math.min(1.0, Math.max(0.0, requiredPower)), targetAngle);
+    }
+    
+    private double calculatePowerForFixedAngle(double distanceMM, double heightMM, double angleDeg) {
+        double rad = Math.toRadians(angleDeg);
+        double tanTheta = Math.tan(rad);
+        double cosTheta = Math.cos(rad);
+        
+        // Kinematics: y = x tan0 - (g x^2)/(2 v^2 cos^2 0)
+        // v^2 = (g x^2) / (2 cos^2 0 * (x tan0 - y))
+        
+        double numerator = GRAVITY_MM_S2 * distanceMM * distanceMM;
+        double term = distanceMM * tanTheta - heightMM;
+        
+        if (term <= 0) {
+            // Unreachable at this angle (projectile would hit ground/rim before peak)
+            return 1.0; 
+        }
+        
+        double denominator = 2 * cosTheta * cosTheta * term;
+        double vRequired = Math.sqrt(numerator / denominator);
+        
+        return vRequired / PROJECTILE_VELOCITY_MM_S_AT_MAX;
     }
 }
