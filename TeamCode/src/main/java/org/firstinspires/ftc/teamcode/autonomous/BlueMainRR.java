@@ -6,7 +6,6 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -15,8 +14,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.util.RobotControl;
 import org.firstinspires.ftc.teamcode.util.roadRunner.MecanumDrive;
 
-@Autonomous(name = "RedMainRR", group = "888888")
-public class RedMainRR extends LinearOpMode {
+@Autonomous(name = "BlueMain88", group = "888888")
+public class BlueMainRR extends LinearOpMode {
 
     private RobotControl robot;
     private MecanumDrive drive;
@@ -28,18 +27,16 @@ public class RedMainRR extends LinearOpMode {
     private final Pose2d startPose = new Pose2d(63, 28, Math.toRadians(0));
 
     // Shoot: (132, 93) -> (60, 21)
-    private final Pose2d shootPose = new Pose2d(60, 21, Math.toRadians(-25.8));
+    private final Pose2d shootPose = new Pose2d(60, 35, Math.toRadians(27));
 
     // RedSquare: (111, 45) -> (39, -27)
-    private final Pose2d redSquare = new Pose2d(20, 57.7, Math.toRadians(0));
+    private final Pose2d redSquare = new Pose2d(20, 0, Math.toRadians(0));
 
     // Pickup: (111, 28) -> (39, -44)
-    private final Pose2d pickupPose = new Pose2d(61, 57.7, Math.toRadians(0));
+    private final Pose2d pickupPose = new Pose2d(61, 0, Math.toRadians(0));
 
     // Final: (111, 38) -> (39, -34)
-    private final Pose2d finalPose = new Pose2d(39, 34, Math.toRadians(0));
-
-    private final Pose2d humanPose = new Pose2d(59, 73, Math.toRadians(80));
+    private final Pose2d finalPose = new Pose2d(39, 22, Math.toRadians(0));
 
     public class FireShotsAction implements Action {
         private final int shots;
@@ -58,7 +55,7 @@ public class RedMainRR extends LinearOpMode {
                 // Using a blocking call inside Action.run() suspends the loop, but for shooting
                 // while stopped it is acceptable.
                 shooterPower = power;
-                safeSleep(1400); // Spin up
+                safeSleep(1500); // Spin up
 
                 for (int i = 0; i < shots; i++) {
                     if (!opModeIsActive())
@@ -81,7 +78,7 @@ public class RedMainRR extends LinearOpMode {
 //                        safeSleep(200);
 //                    }
                     if (i != shots - 1)
-                        safeSleep(750);
+                        safeSleep(800);
                 }
                 robot.shooter.setPower(0);
                 executed = true;
@@ -176,14 +173,6 @@ public class RedMainRR extends LinearOpMode {
                 .strafeToLinearHeading(finalPose.position, finalPose.heading)
                 .build();
 
-        Action trajectoryShootToHuman = drive.actionBuilder(shootPose)
-                .strafeToLinearHeading(humanPose.position, humanPose.heading)
-                        .build();
-
-        Action trajectoryHumanToShoot = drive.actionBuilder(humanPose)
-                .strafeToLinearHeading(shootPose.position, shootPose.heading)
-                        .build();
-
         // Execute Actions
         // Based on redMain.java active code + commented out suggestions
 
@@ -191,7 +180,7 @@ public class RedMainRR extends LinearOpMode {
         Actions.runBlocking(
                 new SequentialAction(
                         trajectoryStartToShoot,
-                        new FireShotsAction(3, 0.691f)));
+                        new FireShotsAction(3, 0.7027f)));
 
         // Uncomment below to enable the full cycle (Logic from redMain commented
         // sections
@@ -202,12 +191,7 @@ public class RedMainRR extends LinearOpMode {
          trajectoryRedToPickup,
          intakeOff(), // ensure intake is handled (redMain logic was mixed)
          trajectoryPickupToShoot,
-         new FireShotsAction(2, 0.691f),
-         intakeOn(),
-         trajectoryShootToHuman,
-         intakeOff(),
-         trajectoryHumanToShoot,
-         new FireShotsAction(2, 0.691f),
+         new FireShotsAction(2, 0.7027f),
          trajectoryShootToFinal
          )
          );

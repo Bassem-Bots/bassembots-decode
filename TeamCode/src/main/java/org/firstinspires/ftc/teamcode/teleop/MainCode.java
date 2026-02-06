@@ -82,7 +82,7 @@ public class MainCode extends LinearOpMode {
                 // Calculate distance and set shooter power
                 double distance = calculateDistanceToTarget();
                 shooterPower = calculateShooterPower(distance);
-                robot.shooter.setPower(shooterPower);
+                robot.setShooterPower(shooterPower);
             } else {
                 // Use goal-facing mode if enabled, otherwise use manual yaw control
                 if (goalFacingMode && !goalFacingExecuted) {
@@ -188,7 +188,7 @@ public class MainCode extends LinearOpMode {
 //            }
 //            lastDpadLeftState = currentDpadLeft;
 
-            robot.shooter.setPower(shooterPower);
+            robot.setShooterVelocity(shooterPower);
             robot.intake.setPower(intakePower);
 
             // Update odometry and telemetry
@@ -236,6 +236,8 @@ public class MainCode extends LinearOpMode {
             telemetry.addData("Distance to Target", "%.1f mm (%.1f in)", distanceToTarget, distanceToTarget / 25.4);
             telemetry.addData("Calculated Power", "%.3f", calculatedPower);
             telemetry.addData("Battery Voltage", "%.2f V", batteryVoltage);
+            telemetry.addData("actual velocirty", robot.shooter.getVelocity());
+            telemetry.addData("predicted voelfgf", robot.powerToVelocity(shooterPower));
             
             telemetry.update();
         }

@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
@@ -100,7 +101,7 @@ public class RobotControl {
         angleExtender = myOpMode.hardwareMap.get(Servo.class, "angleExtender");
 
         // Configure shooter for velocity control
-        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         //armMotor = myOpMode.hardwareMap.get(DcMotor.class, "arm_motor");
 
@@ -276,6 +277,7 @@ public class RobotControl {
      */
     public void setShooterVelocity(double power) {
         // Clamp power to valid range
+        power *= (11.67 / getBatteryVoltage() - 1) * 0.67 + 1;
         power = Math.max(0.0, Math.min(1.0, power));
 
         // Convert power to ticks per second
@@ -297,7 +299,7 @@ public class RobotControl {
      * @return current velocity in ticks per second
      */
     public double getShooterVelocity() {
-        return shooter.getVelocity();
+        return -shooter.getVelocity();
     }
 
     public void setShooterPower(double shooterPower) {
@@ -318,5 +320,22 @@ public class RobotControl {
 
     public void servoToggle() {
         angleExtender.setPosition(angleExtended ? 0.5 : 0);
+    }
+
+    public double getBatteryVoltage() {
+        double minVoltage = Double.POSITIVE_INFINITY;
+
+        for (VoltageSensor sensor : myOpMode.hardwareMap.voltageSensor) {
+            double voltage = sensor.getVoltage();
+            if (voltage > 0) {
+                minVoltage = Math.min(minVoltage, voltage);
+            }
+        }
+
+        return minVoltage;
+    }
+
+    public double powerToVelocity(double power) {
+        return power * MAX_TICKS_PER_SEC;
     }
 }
