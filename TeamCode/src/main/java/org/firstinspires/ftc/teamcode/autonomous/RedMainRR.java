@@ -28,18 +28,19 @@ public class RedMainRR extends LinearOpMode {
     private final Pose2d startPose = new Pose2d(63, 28, Math.toRadians(0));
 
     // Shoot: (132, 93) -> (60, 21)
-    private final Pose2d shootPose = new Pose2d(60, 21, Math.toRadians(-25.8));
+    private final Pose2d shootPose = new Pose2d(55, 21, Math.toRadians(-25.5));
 
     // RedSquare: (111, 45) -> (39, -27)
     private final Pose2d redSquare = new Pose2d(20, 57.7, Math.toRadians(0));
 
     // Pickup: (111, 28) -> (39, -44)
-    private final Pose2d pickupPose = new Pose2d(61, 57.7, Math.toRadians(0));
+    private final Pose2d pickupPose = new Pose2d(62, 57.7, Math.toRadians(0));
 
     // Final: (111, 38) -> (39, -34)
     private final Pose2d finalPose = new Pose2d(39, 34, Math.toRadians(0));
 
-    private final Pose2d humanPose = new Pose2d(59, 73, Math.toRadians(80));
+    private final Pose2d humanPose = new Pose2d(54, 60, Math.toRadians(56.7));
+    private final Pose2d humanPoset = new Pose2d(69, 63, Math.toRadians(62.7));
 
     public class FireShotsAction implements Action {
         private final int shots;
@@ -84,6 +85,7 @@ public class RedMainRR extends LinearOpMode {
                         safeSleep(750);
                 }
                 robot.shooter.setPower(0);
+                shooterPower = 0;
                 executed = true;
             }
             return false; // Done
@@ -180,8 +182,12 @@ public class RedMainRR extends LinearOpMode {
                 .strafeToLinearHeading(humanPose.position, humanPose.heading)
                         .build();
 
-        Action trajectoryHumanToShoot = drive.actionBuilder(humanPose)
+        Action trajectoryHumanToShoot = drive.actionBuilder(humanPoset)
                 .strafeToLinearHeading(shootPose.position, shootPose.heading)
+                        .build();
+
+        Action trajectoryHumant = drive.actionBuilder(humanPose)
+                .strafeToLinearHeading(humanPoset.position, humanPoset.heading)
                         .build();
 
         // Execute Actions
@@ -191,7 +197,7 @@ public class RedMainRR extends LinearOpMode {
         Actions.runBlocking(
                 new SequentialAction(
                         trajectoryStartToShoot,
-                        new FireShotsAction(3, 0.691f)));
+                        new FireShotsAction(3, 0.69f)));
 
         // Uncomment below to enable the full cycle (Logic from redMain commented
         // sections
@@ -202,12 +208,15 @@ public class RedMainRR extends LinearOpMode {
          trajectoryRedToPickup,
          intakeOff(), // ensure intake is handled (redMain logic was mixed)
          trajectoryPickupToShoot,
-         new FireShotsAction(2, 0.691f),
+         new FireShotsAction(2, 0.69f),
          intakeOn(),
          trajectoryShootToHuman,
+         trajectoryHumant,
+         waitAction(800),
          intakeOff(),
          trajectoryHumanToShoot,
-         new FireShotsAction(2, 0.691f),
+         //intakeOff(),
+         new FireShotsAction(2, 0.69f),
          trajectoryShootToFinal
          )
          );

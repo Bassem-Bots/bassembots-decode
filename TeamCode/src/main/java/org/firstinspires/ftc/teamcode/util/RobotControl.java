@@ -277,7 +277,7 @@ public class RobotControl {
      */
     public void setShooterVelocity(double power) {
         // Clamp power to valid range
-        power *= (11.67 / getBatteryVoltage() - 1) * 0.67 + 1;
+        power *= (12 / getBatteryVoltage() - 1) * 0.4 + 1;
         power = Math.max(0.0, Math.min(1.0, power));
 
         // Convert power to ticks per second
