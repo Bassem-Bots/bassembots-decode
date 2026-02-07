@@ -1,11 +1,14 @@
 package org.firstinspires.ftc.teamcode.autonomous;
 
+// Allahu Akbar
+
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -14,7 +17,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.util.RobotControl;
 import org.firstinspires.ftc.teamcode.util.roadRunner.MecanumDrive;
 
-@Autonomous(name = "BlueMain88", group = "888888")
+@Autonomous(name = "BlueMainRR", group = "888888")
 public class BlueMainRR extends LinearOpMode {
 
     private RobotControl robot;
@@ -24,28 +27,37 @@ public class BlueMainRR extends LinearOpMode {
 
     // Coordinate Conversion: RR = Pedro - 72
     // Start: (135, 100) -> (63, 28)
-    private final Pose2d startPose = new Pose2d(63, 28, Math.toRadians(0));
+    private final Pose2d startPose = new Pose2d(63, 38.5, Math.toRadians(0));
 
     // Shoot: (132, 93) -> (60, 21)
-    private final Pose2d shootPose = new Pose2d(60, 35, Math.toRadians(27));
+    private final Pose2d shootPose = new Pose2d(55, 47, Math.toRadians(20.5));
 
     // RedSquare: (111, 45) -> (39, -27)
-    private final Pose2d redSquare = new Pose2d(20, 0, Math.toRadians(0));
+    private final Pose2d redSquare = new Pose2d(43, 41, Math.toRadians(-90));
 
     // Pickup: (111, 28) -> (39, -44)
-    private final Pose2d pickupPose = new Pose2d(61, 0, Math.toRadians(0));
+    private final Pose2d pickupPose = new Pose2d(43, 16, Math.toRadians(-90));
 
     // Final: (111, 38) -> (39, -34)
-    private final Pose2d finalPose = new Pose2d(39, 22, Math.toRadians(0));
+    private final Pose2d finalPose = new Pose2d(39, 43, Math.toRadians(0));
+
+    private final Pose2d humanPose = new Pose2d(54, 17, Math.toRadians(-50));
+    private final Pose2d humanPoset = new Pose2d(64, 12.5, Math.toRadians(-60));
 
     public class FireShotsAction implements Action {
         private final int shots;
-        private final float power;
         private boolean executed = false;
 
-        public FireShotsAction(int shots, float power) {
+        public FireShotsAction(int shots) {
             this.shots = shots;
-            this.power = power;
+        }
+
+        public void fixTheShooter(){
+            RobotControl.ShootingSolution solution = robot.calculateShootingSolution(robot.calculateDistanceToTarget(), 1067);
+
+            shooterPower = solution.power;
+            robot.setShooterVelocity(shooterPower);
+            robot.setLauncherAngle(solution.angleDeg);
         }
 
         @Override
@@ -54,8 +66,8 @@ public class BlueMainRR extends LinearOpMode {
                 // This calls the blocking method from RobotControl
                 // Using a blocking call inside Action.run() suspends the loop, but for shooting
                 // while stopped it is acceptable.
-                shooterPower = power;
-                safeSleep(1500); // Spin up
+                fixTheShooter();
+                safeSleep(1600); // Spin up
 
                 for (int i = 0; i < shots; i++) {
                     if (!opModeIsActive())
@@ -68,7 +80,7 @@ public class BlueMainRR extends LinearOpMode {
                     safeSleep(500);
 
                     if (i > 0) {
-                        safeSleep(600);
+                        safeSleep(700);
                     }
 
                     robot.intake.setPower(0);
@@ -78,9 +90,10 @@ public class BlueMainRR extends LinearOpMode {
 //                        safeSleep(200);
 //                    }
                     if (i != shots - 1)
-                        safeSleep(800);
+                        safeSleep(750);
                 }
                 robot.shooter.setPower(0);
+                shooterPower = 0;
                 executed = true;
             }
             return false; // Done
@@ -91,6 +104,7 @@ public class BlueMainRR extends LinearOpMode {
     public Action intakeOn() {
         return packet -> {
             robot.intake.setPower(-1);
+            robot.shootpush.setPower(-0.0967);
             return false;
         };
     }
@@ -98,6 +112,7 @@ public class BlueMainRR extends LinearOpMode {
     public Action intakeOff() {
         return packet -> {
             robot.intake.setPower(0);
+            robot.shootpush.setPower(0);
             return false;
         };
     }
@@ -117,6 +132,7 @@ public class BlueMainRR extends LinearOpMode {
                 telemetry.addData("shooterpower", shooterPower);
                 telemetry.addData("power velocirty", robot.powerToVelocity(shooterPower));
                 telemetry.addData("actual velocuirty", robot.getShooterVelocity());
+                telemetry.addData("ododo", robot.odo.getPosition());
                 telemetry.update();
             }
         } catch (Exception e) {
@@ -134,11 +150,18 @@ public class BlueMainRR extends LinearOpMode {
         // This overlap is managed by ensuring we don't use RobotControl for driving.
         robot = new RobotControl(this);
         robot.init(); // Sets up intake, shooter, etc.
+        robot.blueTeam = false;
 
         drive = new MecanumDrive(hardwareMap, startPose);
 
         telemetry.addData("Status", "Initialized - RR RedMain");
         telemetry.update();
+
+        while(opModeInInit()) {
+            robot.odo.update();
+            telemetry.addData("odopos", robot.odo.getPosition());
+            telemetry.update();
+        }
 
         waitForStart();
 
@@ -173,6 +196,18 @@ public class BlueMainRR extends LinearOpMode {
                 .strafeToLinearHeading(finalPose.position, finalPose.heading)
                 .build();
 
+        Action trajectoryShootToHuman = drive.actionBuilder(shootPose)
+                .strafeToLinearHeading(humanPose.position, humanPose.heading)
+                .build();
+
+        Action trajectoryHumanToShoot = drive.actionBuilder(humanPoset)
+                .strafeToLinearHeading(shootPose.position, shootPose.heading)
+                .build();
+
+        Action trajectoryHumant = drive.actionBuilder(humanPose)
+                .strafeToLinearHeading(humanPoset.position, humanPoset.heading)
+                .build();
+
         // Execute Actions
         // Based on redMain.java active code + commented out suggestions
 
@@ -180,21 +215,29 @@ public class BlueMainRR extends LinearOpMode {
         Actions.runBlocking(
                 new SequentialAction(
                         trajectoryStartToShoot,
-                        new FireShotsAction(3, 0.7027f)));
+                        new FireShotsAction(3)));
 
         // Uncomment below to enable the full cycle (Logic from redMain commented
         // sections
-         Actions.runBlocking(
-         new SequentialAction(
-         trajectoryShootToRed,
-         intakeOn(),
-         trajectoryRedToPickup,
-         intakeOff(), // ensure intake is handled (redMain logic was mixed)
-         trajectoryPickupToShoot,
-         new FireShotsAction(2, 0.7027f),
-         trajectoryShootToFinal
-         )
-         );
+        Actions.runBlocking(
+                new SequentialAction(
+                        trajectoryShootToRed,
+                        intakeOn(),
+                        trajectoryRedToPickup,
+                        intakeOff(), // ensure intake is handled (redMain logic was mixed)
+                        trajectoryPickupToShoot,
+                        new FireShotsAction(2),
+                        intakeOn(),
+                        trajectoryShootToHuman,
+                        trajectoryHumant,
+                        waitAction(1000),
+                        intakeOff(),
+                        trajectoryHumanToShoot,
+                        //intakeOff(),
+                        new FireShotsAction(2),
+                        trajectoryShootToFinal
+                )
+        );
 
         // Final sleep as per redMain active code
         sleep(9000);

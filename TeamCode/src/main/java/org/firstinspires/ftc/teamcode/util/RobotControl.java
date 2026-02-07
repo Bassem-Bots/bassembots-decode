@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.util.GoBildaPinpointDriver;
 import org.firstinspires.ftc.teamcode.util.EnhancedNavigation;
 import org.firstinspires.ftc.teamcode.util.ShooterPower;
@@ -49,6 +51,7 @@ public class RobotControl {
     public static final double GOAL_X = 2633.769; // mm
     public static final double GOAL_Y = 1004.791; // mm
     public boolean angleExtended = false;
+    public boolean blueTeam = false;
     // public static final int MAX_EXTENSION = -2150;
     // public static final double TICKS_PER_DEGREE = (double) 2500 / 360;
     // public static final double TICKS_PER_MM = 1;
@@ -276,21 +279,23 @@ public class RobotControl {
      * @param power Power from 0.0 to 1.0 (1.0 = max RPM)
      */
     public void setShooterVelocity(double power) {
-        // Voltage compensation: Target 13.5V
-        // AppliedPower = TargetPower * (13.5 / CurrentVoltage)
-        double voltage = getBatteryVoltage();
-        if (voltage < 9.0) voltage = 9.0; // Protection against div/0 or brownout reading
+        // Clamp power to valid range
+        power *= (12 / getBatteryVoltage() - 1) * 0.35 + 1;
+        power = Math.max(0.0, Math.min(1.0, power));
 
-        double compensationFactor = 13.5 / voltage;
-        
-        // Apply compensation
-        double compensatedPower = power * compensationFactor;
-        compensatedPower = Math.max(0.0, Math.min(1.0, compensatedPower));
+        // Convert power to ticks per second
+        // Formula: velocity (ticks/sec) = power * (RPM / 60) * ticks_per_rev
+        double velocity = power * MAX_TICKS_PER_SEC;
 
-        if (power > 0) {
-            shooter.setPower(compensatedPower);
-        } else {
-            shooter.setPower(0);
+        // Ensure velocity is positive (forward direction)
+        velocity = Math.abs(velocity);
+        if (getShooterVelocity() <= velocity - 30) {
+            shooter.setPower(1);
+        } else if (getShooterVelocity() > velocity + 70) {
+            shooter.setPower(-1);
+        }
+        else {
+            shooter.setPower(power);
         }
     }
 
@@ -353,8 +358,8 @@ public class RobotControl {
 
     public static final double GRAVITY_MM_S2 = 9810.0;
     // Calibrated: 9000.0 to widen the power usage range (Sensitivity fix)
-    public static final double PROJECTILE_VELOCITY_MM_S_AT_MAX = 9000.0;
-    public static final double LAUNCHER_HEIGHT_MM = 350.0; // Est. 14 inches from ground
+    public static final double PROJECTILE_VELOCITY_MM_S_AT_MAX = 8900.0;
+    public static final double LAUNCHER_HEIGHT_MM = 250.0; // Est. 14 inches from ground
 
     public static class ShootingSolution {
         public double power;
@@ -379,7 +384,7 @@ public class RobotControl {
 
     public ShootingSolution calculateShootingSolution(double distanceMM, double targetNetHeightMM) {
         // Correct for launcher height
-        double heightDeltaMM = targetNetHeightMM - LAUNCHER_HEIGHT_MM;
+        double heightDeltaMM = (targetNetHeightMM - LAUNCHER_HEIGHT_MM) * (1 - distanceMM / 13200);
 
         // Strategy V5: Explicit Linear Mapping
         // User complains angle is "always 45". 
@@ -425,12 +430,40 @@ public class RobotControl {
         
         if (term <= 0) {
             // Unreachable at this angle (projectile would hit ground/rim before peak)
-            return 1.0; 
+            return 0;
         }
         
         double denominator = 2 * cosTheta * cosTheta * term;
         double vRequired = Math.sqrt(numerator / denominator);
         
         return vRequired / PROJECTILE_VELOCITY_MM_S_AT_MAX;
+    }
+
+    public double calculateDistanceToTarget() {
+        odo.update();
+        Pose2D pos = odo.getPosition();
+        double currentX = pos.getX(DistanceUnit.MM);
+        double currentY = pos.getY(DistanceUnit.MM);
+
+        double deltaX = getTargetX() - currentX;
+        double deltaY = getTargetY() - currentY;
+
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+
+    /**
+     * Get target X coordinate based on team
+     * @return target X in mm
+     */
+    private double getTargetX() {
+        return blueTeam ? -3200 : -2820;
+    }
+
+    /**
+     * Get target Y coordinate based on team
+     * @return target Y in mm
+     */
+    private double getTargetY() {
+        return blueTeam ? -1300 : 950;
     }
 }
